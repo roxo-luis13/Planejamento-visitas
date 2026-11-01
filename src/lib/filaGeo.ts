@@ -1,3 +1,4 @@
+import { chaveMaps } from '../config';
 import { atualizarCliente, db, lerConfig } from '../db';
 import type { Cliente } from '../types';
 import { sugerirLocal, type Cache } from './geocodificar';
@@ -61,7 +62,7 @@ export async function iniciarFila() {
     const c = lista[0];
     publicar({ atual: c.fantasia, pendentes: lista.length });
     try {
-      await sugerirUm(c, cfg.googleKey);
+      await sugerirUm(c, chaveMaps(cfg));
       tentados.add(c.codigo);
       errosSeguidos = 0;
       publicar({ feitos: estado.feitos + 1, pendentes: lista.length - 1, erro: null });

@@ -10,7 +10,7 @@ Roda no Safari do iPhone e é instalado em *Compartilhar → Adicionar à Tela d
 | **Rota** | 📍 Cheguei e **registro da visita** · dia selecionável · **saída escolhida aqui** (localização atual, locais salvos como Casa/Escritório, ou busca de endereço; ★ = padrão dos próximos dias) · horário de saída · voltar ou não à saída · **otimizar com trânsito (Google)** · km reais, tempo com trânsito e horário de chegada em cada cliente · traçado pelas ruas no mapa · navegar (Apple Mapas / Google Maps / Waze) · registrar resultado da visita |
 | **Carteira** | Busca · **filtros com várias opções**: microrregiões, cidades, bairros e **marcas** (com busca digitando; bairro escolhido junto com a cidade; as marcas vêm das colunas da planilha, então marca nova entra sozinha ao importar), níveis de prioridade e situação financeira (sem pendência / do cliente / do grupo) · dentro de um filtro vale qualquer opção marcada, entre filtros vale todas · "Limpar filtros" · ordenação · botão ＋ para pôr na rota do dia · barra fixa com os selecionados (ver, desmarcar um a um ou todos) e filtro "Só selecionados" |
 | **Cliente** | Endereço com nível de precisão e alertas · "Estou na loja" (grava o GPS) · ajustar no mapa · corrigir endereço · compras por marca e ano · frequência · financeiro · grupo/rede · anotações · histórico de visitas |
-| **Ajustes** | Chave do Google (com passo a passo e teste) · importar planilha · progresso das sugestões de endereço · tempo por visita · backup/restauração |
+| **Ajustes** | Google Drive e lembretes na Agenda · importar planilha · progresso das sugestões de endereço · tempo por visita · backup/restauração |
 
 ### Registro da visita (nada é obrigatório)
 Na Rota, **📍 Cheguei** marca a chegada; **Registrar visita** abre o formulário (também dá para registrar pela ficha do cliente,
@@ -51,11 +51,14 @@ Aba **📊 Relatórios**, com filtro de período (este mês, mês passado, últi
 "Há N dias" ou "X" = pendência **do próprio cliente** (selo vermelho). "Grupo Econômico com..." = pendência **de outra loja do grupo** (selo laranja).
 
 ### Rota real com trânsito (Google Routes API)
-Com a chave do Google cadastrada em Ajustes, "Otimizar com trânsito" pede ao Google a **melhor ordem pelas ruas, considerando o
+**Desligado por enquanto** (sem custo: o app usa estimativa em linha reta e o botão "Abrir no Google Maps" mostra o trânsito).
+A chave não é colocada pelo app: quando for ativar, ela vai em `CHAVE_MAPS` no `src/config.ts`, **depois** de travar as cotas
+diárias no Google Cloud (Routes API e Places API (New): 150/dia cada) e criar o alerta de orçamento. O app ainda limita cada
+aparelho a 70 chamadas/dia de cada tipo. Com a chave, "Otimizar com trânsito" pede ao Google a **melhor ordem pelas ruas, considerando o
 trânsito** do horário de saída (agora, ou o previsto se a saída for no futuro). O app mostra km, tempo dirigindo, minutos perdidos no
 trânsito, horário de chegada em cada cliente e fim previsto. "Atualizar trânsito" recalcula os tempos mantendo a ordem.
 Com visitas já registradas, o cálculo parte da última visita, no horário atual. Sem chave, o app usa uma estimativa em linha reta.
-A chave fica guardada só no aparelho (nunca no repositório); restrinja-a ao site do app e às APIs Routes e Places (New).
+Restrinja a chave ao site do app e às APIs Routes e Places (New).
 
 ### Google Drive: dados na conta do Alexandre
 Em **Ajustes → Entrar com Google**, os dados (clientes, endereços confirmados, anotações, rotas, visitas, locais de saída

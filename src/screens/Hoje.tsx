@@ -1,3 +1,4 @@
+import { chaveMaps } from '../config';
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, lerConfig, obterRota } from '../db';
@@ -23,8 +24,8 @@ function duracao(min: number) {
 }
 const hora = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjustes }: {
-  data: string; setData: (d: string) => void; abrirCliente: (c: string) => void; irCarteira: () => void; irAjustes: () => void;
+export default function Hoje({ data, setData, abrirCliente, irCarteira }: {
+  data: string; setData: (d: string) => void; abrirCliente: (c: string) => void; irCarteira: () => void;
 }) {
   const rota = useLiveQuery(() => obterRota(data), [data]);
   const cfg = useLiveQuery(() => lerConfig(), []);
@@ -53,7 +54,7 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
   const partida = rota?.partida ?? null;
   const retornar = rota?.retornar ?? true;
   const calculo = rota?.calculo ?? null;
-  const temGoogle = !!cfg?.googleKey;
+  const temGoogle = !!chaveMaps(cfg);
   const comLocal = paradas.map((p) => clientes.get(p.codigo)).filter((c): c is Cliente => !!c?.local);
   const est = cfg ? estimar(comLocal.map((c) => c.local!), partida, retornar, cfg.velocidadeMedia, cfg.minutosPorVisita) : null;
   const aproximados = comLocal.filter((c) => PRECISOES[c.local!.precisao].alerta).length;
@@ -179,14 +180,8 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
                   <div><b>{est ? `~${Math.round(est.km)}` : '—'}</b><span>km</span></div>
                   <div><b>{est ? duracao(est.minutosTotal) : '—'}</b><span>dia total</span></div>
                 </div>
-                <div className="nota-peq">⚠️ Estimativa em linha reta. {temGoogle ? 'Toque em "Otimizar com trânsito" para a rota real.' : ''}</div>
+                <div className="nota-peq">Estimativa em linha reta (ajustada para as ruas). Para o trânsito real, use “Abrir no Google Maps”.</div>
               </>
-            )}
-            {!temGoogle && (
-              <div className="alerta">
-                Para calcular a rota <b>pelas ruas com o trânsito do momento</b>, cadastre a chave do Google (Ajustes → Avançado).
-                <button className="btn btn-sec btn-peq" style={{ marginTop: 8 }} onClick={irAjustes}>Configurar Google</button>
-              </div>
             )}
             {(aproximados > 0 || semLocal > 0) && (
               <div className="alerta">

@@ -1,3 +1,4 @@
+import { chaveMaps } from '../config';
 import { atualizarCliente, db, lerConfig, obterRota, salvarConfig } from '../db';
 import type { Cliente, Endereco, LocalSalvo, Partida, Rota, Visita } from '../types';
 import { mesclar } from './mesclar';
@@ -102,7 +103,7 @@ function horarioSaida(r: Rota, temFeitas: boolean): Date {
 
 /**
  * Otimiza (ou só recalcula os tempos de) as visitas ainda não feitas.
- * Com chave do Google: ruas reais + trânsito. Sem chave: estimativa em linha reta.
+ * Com chave do Google (config.ts): ruas reais + trânsito. Sem chave: estimativa em linha reta.
  * As visitas já registradas ficam no topo; o ponto de partida passa a ser a última visita feita.
  */
 export async function otimizarRota(data: string, otimizar = true) {
@@ -119,11 +120,12 @@ export async function otimizarRota(data: string, otimizar = true) {
   const pts = comLocal.map((p) => clientes.get(p.codigo)!.local!);
 
   let limite: string | null = null;
-  if (cfg.googleKey && origem && pts.length) try {
+  const chave = chaveMaps(cfg);
+  if (chave && origem && pts.length) try {
     // Sem volta: escolhe a última parada do dia pela estimativa, o Google ordena o resto
     const fimFixo = voltar ? undefined : otimizar ? otimizarOrdem(pts, origem, false).at(-1) : pts.length - 1;
     const saida = horarioSaida(r, feitas.length > 0);
-    const g = await rotaGoogle({ chave: cfg.googleKey, origem, paradas: pts, voltar, retorno: r.partida ?? undefined, otimizar, fimFixo, saida });
+    const g = await rotaGoogle({ chave, origem, paradas: pts, voltar, retorno: r.partida ?? undefined, otimizar, fimFixo, saida });
     const ordenadas = g.ordem.map((i) => comLocal[i]);
     r.paradas = [...feitas, ...ordenadas, ...semLocal];
     r.calculo = {
@@ -318,9 +320,9 @@ export { lerConfig };
 // ---------- Busca de endereço para a saída ----------
 export async function buscarLugares(texto: string): Promise<{ lat: number; lng: number; rotulo: string; endereco: string }[]> {
   const cfg = await lerConfig();
-  if (cfg.googleKey) {
+  if (chaveMaps(cfg)) {
     const { buscarLugaresGoogle } = await import('./google');
-    try { return await buscarLugaresGoogle(cfg.googleKey, texto); } catch { /* tenta o gratuito */ }
+    try { return await buscarLugaresGoogle(chaveMaps(cfg), texto); } catch { /* tenta o gratuito */ }
   }
   const { buscarLugar } = await import('./geocodificar');
   const r = await buscarLugar(texto);

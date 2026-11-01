@@ -71,7 +71,7 @@ export default function App() {
       )}
       <main className="conteudo">
         {cliente ? <ClienteTela codigo={cliente} data={data} voltar={fecharCliente} />
-          : aba === 'hoje' ? <Hoje data={data} setData={setData} abrirCliente={abrirCliente} irCarteira={() => irPara('carteira')} irAjustes={() => irPara('ajustes')} />
+          : aba === 'hoje' ? <Hoje data={data} setData={setData} abrirCliente={abrirCliente} irCarteira={() => irPara('carteira')} />
           : aba === 'carteira' ? <Carteira data={data} setData={setData} abrirCliente={abrirCliente} irRota={() => irPara('hoje')} />
           : aba === 'relatorios' ? <Relatorios abrirCliente={abrirCliente} />
           : <Ajustes />}
