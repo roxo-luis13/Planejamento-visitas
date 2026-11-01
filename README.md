@@ -78,6 +78,13 @@ No Google Cloud (mesmo projeto do Maps):
 4. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) para `ID_CLIENTE` em `src/config.ts`.
    Esse ID não é secreto.
 
+### Editar cliente
+Botão ✏️ em cada cliente da Carteira e **✏️ Editar** na ficha: nome fantasia, razão social, com quem falar, telefone
+(com atalhos para ligar e WhatsApp na ficha) e endereço completo (CEP preenche a rua pelos Correios).
+Nome, bairro, cidade, UF e CEP diferentes da planilha viram **correções**: continuam valendo nas próximas importações
+(e somem sozinhas se a planilha passar a trazer o mesmo valor); embaixo do campo aparece o valor da planilha, para desfazer.
+O que foi digitado é salvo mesmo sem internet; com rua e número, o app localiza a loja no mapa.
+
 ### Endereços (a planilha não traz rua nem número)
 O app sugere um local automaticamente, nesta ordem: loja pelo nome (Google, se houver chave; senão OpenStreetMap) → rua pelo CEP (ViaCEP, só para CEP que não seja o geral da cidade) → centro do bairro → centro da cidade.
 Toda sugestão aparece com ⚠️ até o Alexandre **confirmar** ("Estou na loja", "Ajustar no mapa" ou "Corrigir endereço").

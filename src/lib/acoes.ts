@@ -1,6 +1,7 @@
 import { atualizarCliente, db, lerConfig, obterRota, salvarConfig } from '../db';
 import type { Cliente, Endereco, LocalSalvo, Partida, Rota, Visita } from '../types';
 import { mesclar } from './mesclar';
+import { corrigir } from './correcoes';
 import { otimizarOrdem } from './rota';
 import { rotaGoogle } from './google';
 import { ErroLimite } from './cotaGoogle';
@@ -229,17 +230,45 @@ export async function confirmarLocal(codigo: string, lat: number, lng: number, f
   });
 }
 
-export async function salvarEndereco(c: Cliente, e: Endereco): Promise<boolean> {
-  const p = await localizarEndereco(e);
-  const manterGps = c.local?.precisao === 'confirmado';
-  await atualizarCliente(c.codigo, {
-    endereco: e,
-    avisoCep: null,
-    ...(p && !manterGps
-      ? { local: { ...p, precisao: 'informado' as const, fonte: 'Endereço informado pelo Alexandre', atualizadoEm: new Date().toISOString() }, geoStatus: 'ok' as const }
-      : {})
+export interface EdicaoCliente {
+  fantasia: string; razao: string; responsavel: string; telefone: string;
+  endereco: Endereco;
+}
+
+/**
+ * Edição do cliente pelo Alexandre. Nome, bairro, cidade, UF e CEP diferentes da planilha viram
+ * "correções" (continuam valendo nas próximas importações). Retorna se o endereço foi achado no mapa.
+ */
+export async function editarCliente(codigo: string, ed: EdicaoCliente): Promise<{ localizado: boolean | 'sem-internet' | null }> {
+  const c = await db.clientes.get(codigo);
+  if (!c) return { localizado: null };
+  const e = ed.endereco;
+  const { campos, correcoes } = corrigir(c, { fantasia: ed.fantasia, razao: ed.razao, bairro: e.bairro, cidade: e.cidade, uf: e.uf, cep: e.cep });
+  const enderecoAntes = JSON.stringify(c.endereco ?? null);
+  const temRua = !!e.logradouro.trim();
+  const novoEndereco: Endereco | null = temRua || c.endereco ? { ...e, logradouro: e.logradouro.trim(), numero: e.numero.trim(), cep: e.cep.replace(/\D/g, '') } : null;
+  const mudouEndereco = JSON.stringify(novoEndereco) !== enderecoAntes;
+  const mudouLugar = campos.bairro !== c.bairro || campos.cidade !== c.cidade || campos.cep !== c.cep;
+  const agora = Date.now();
+  // grava tudo primeiro (mesmo sem internet o que foi digitado fica salvo); depois tenta achar no mapa
+  await db.clientes.update(codigo, {
+    ...campos, correcoes, responsavel: ed.responsavel.trim(), telefone: ed.telefone.trim(),
+    ...(mudouEndereco ? { endereco: novoEndereco, avisoCep: null } : {}),
+    _emPlanilha: agora, _emUsuario: agora
   });
-  return !!p;
+  if (temRua && mudouEndereco) {
+    let p: Awaited<ReturnType<typeof localizarEndereco>>;
+    try { p = await localizarEndereco(novoEndereco!); } catch { return { localizado: 'sem-internet' }; }
+    if (p && c.local?.precisao !== 'confirmado') {
+      await atualizarCliente(codigo, { local: { ...p, precisao: 'informado', fonte: 'Endereço informado pelo Alexandre', atualizadoEm: new Date().toISOString() }, geoStatus: 'ok' });
+    }
+    return { localizado: !!p };
+  }
+  if (!temRua && mudouLugar && c.local?.precisao !== 'confirmado' && c.local?.precisao !== 'informado') {
+    // sem rua: refaz a sugestão com o bairro/cidade/CEP corrigidos
+    await refazerSugestao(codigo);
+  }
+  return { localizado: null };
 }
 
 export async function refazerSugestao(codigo: string) {

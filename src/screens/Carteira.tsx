@@ -10,6 +10,7 @@ import Folha from '../components/Folha';
 import { SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
 import Escolha, { type Opcao } from '../components/Escolha';
 import SeletorDia from '../components/SeletorDia';
+import EditarCliente from '../components/EditarCliente';
 
 type Ordem = 'prioridade' | 'nome' | 'cidade';
 
@@ -26,6 +27,8 @@ export default function Carteira({ data, setData, abrirCliente, irRota }: {
   const [limite, setLimite] = useState(80);
   const [soSelecionados, setSoSelecionados] = useState(false);
   const [verSelecionados, setVerSelecionados] = useState(false);
+  const [editando, setEditando] = useState<Cliente | null>(null);
+  const [msgEdicao, setMsgEdicao] = useState('');
 
   const hoje = hojeISO();
   const base = useMemo(() => todos.filter((c) => (foraCarteira ? !c.ativo : c.ativo)), [todos, foraCarteira]);
@@ -129,6 +132,7 @@ export default function Carteira({ data, setData, abrirCliente, irRota }: {
         <span>{lista.length} cliente(s){qtdFiltros ? ` · ${qtdFiltros} filtro(s)` : ''}</span>
         {qtdFiltros > 0 && <button className="btn-link" onClick={() => { setF(FILTROS_VAZIOS); setSoSelecionados(false); }}>Limpar filtros</button>}
       </div>
+      {msgEdicao && <div className="alerta-ok">{msgEdicao}</div>}
       <ul className="lista">
         {lista.slice(0, limite).map((c) => (
           <li key={c.codigo} className="item">
@@ -138,6 +142,7 @@ export default function Carteira({ data, setData, abrirCliente, irRota }: {
               {f.marcas.length > 0 && <div className="item-sub">🕶️ {marcasDoCliente(c).map(titulo).join(', ')}</div>}
               <div className="selos"><SeloPrioridade c={c} /><SeloFinanceiro c={c} /><SeloLocal c={c} /></div>
             </div>
+            <button className="btn-editar" aria-label={`Editar ${c.fantasia}`} onClick={() => { setMsgEdicao(''); setEditando(c); }}>✏️</button>
             {c.ativo ? (
               <button className={`btn-add ${naRota.has(c.codigo) ? 'na-rota' : ''}`} onClick={() => alternarNaRota(data, c.codigo)} aria-label="Adicionar à rota">
                 {naRota.has(c.codigo) ? '✓' : '＋'}
@@ -157,6 +162,8 @@ export default function Carteira({ data, setData, abrirCliente, irRota }: {
           <button className="btn btn-peq" onClick={irRota}>Ver rota ›</button>
         </div>
       )}
+
+      {editando && <EditarCliente c={editando} aoFechar={() => setEditando(null)} aoSalvar={setMsgEdicao} />}
 
       <Folha aberta={verSelecionados} aoFechar={() => setVerSelecionados(false)} titulo={`Na rota de ${nomeDia(data)} (${naRota.size})`}>
         <ul className="lista-sel">

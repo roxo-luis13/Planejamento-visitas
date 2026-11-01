@@ -375,3 +375,13 @@ details.avancado h2 { margin-top: 18px; }
 .plano-dia-rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 15px; color: var(--texto); gap: 8px; }
 .plano-dia-qtd { font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--cartao); color: var(--sub); white-space: nowrap; }
 .plano-dia-qtd.tem { background: var(--azul-botao); color: var(--sobre-azul); }
+
+/* Editar cliente */
+.btn-editar { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--borda); background: var(--cartao); font-size: 16px; display: grid; place-items: center; align-self: center; margin-right: 6px; }
+.nome-linha { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.nome-linha .btn { flex: none; margin-top: 6px; }
+.contato-cliente { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; font-size: 15px; }
+.contato-cliente a { color: var(--azul); text-decoration: none; font-weight: 600; }
+.campo-editar { flex-wrap: wrap; }
+.campo-planilha { flex-basis: 100%; font-size: 12px; color: var(--sub); margin-top: 2px; }
+.campo-planilha .btn-link { font-size: 12px; padding: 0; }

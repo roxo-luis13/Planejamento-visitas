@@ -75,6 +75,13 @@ async function viaCep(buscar: Buscar, cache: Cache, cep: string): Promise<ViaCep
   return j;
 }
 
+/** Consulta um CEP nos Correios (ViaCEP), para preencher a rua no formulário. */
+export async function buscarCep(cep: string): Promise<ViaCep | null> {
+  const so = cep.replace(/\D/g, '');
+  if (so.length !== 8) return null;
+  try { return await viaCep((u, i) => fetch(u, i), semCache, so); } catch { return null; }
+}
+
 /** Tira prefixos tipo "SR-08", "GF-16", "JBRASIL-01" que não ajudam a achar a loja. */
 export function nomeParaBusca(fantasia: string, cidade: string): string {
   let n = fantasia.replace(/\b[A-Z]{1,4}-?\d{1,3}\b/g, ' ').replace(/[-_/]+/g, ' ');

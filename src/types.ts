@@ -51,6 +51,11 @@ export interface DadosPlanilha {
 
 export type GeoStatus = 'pendente' | 'ok' | 'falhou';
 
+export const CAMPOS_CORRIGIVEIS = ['fantasia', 'razao', 'bairro', 'cidade', 'uf', 'cep'] as const;
+export type CampoCorrigivel = typeof CAMPOS_CORRIGIVEIS[number];
+/** valor = o que o Alexandre informou; planilha = o que veio na planilha (para desfazer). */
+export type Correcoes = Partial<Record<CampoCorrigivel, { valor: string; planilha: string }>>;
+
 export interface Cliente extends DadosPlanilha {
   ativo: 0 | 1;                 // 1 = está na planilha mais recente
   importadoEm: string;
@@ -60,6 +65,10 @@ export interface Cliente extends DadosPlanilha {
   geoStatus: GeoStatus;
   avisoCep: string | null;      // ex: CEP mudou na planilha depois de confirmado
   notas: string;
+  responsavel?: string;         // com quem falar
+  telefone?: string;
+  /** Correções feitas pelo Alexandre em dados da planilha (valem mesmo depois de importar de novo). */
+  correcoes?: Correcoes | null;
   // ---- Sincronização (Drive): quando cada parte foi alterada (ms) ----
   _emPlanilha?: number;         // dados da planilha / ativo
   _emUsuario?: number;          // endereço, localização, notas

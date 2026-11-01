@@ -1,3 +1,4 @@
+import { CAMPOS_CORRIGIVEIS } from '../types';
 import type { Cliente, LinhaConfig, Rota, Visita } from '../types';
 
 /** Tudo o que vai para o Drive. (O cache de endereços não vai: é refeito se faltar.) */
@@ -11,7 +12,7 @@ export interface Pacote {
   config: LinhaConfig[];
 }
 
-const CAMPOS_USUARIO: (keyof Cliente)[] = ['endereco', 'local', 'geoStatus', 'avisoCep', 'notas', '_emUsuario'];
+const CAMPOS_USUARIO: (keyof Cliente)[] = ['endereco', 'local', 'geoStatus', 'avisoCep', 'notas', 'responsavel', 'telefone', 'correcoes', '_emUsuario'];
 
 /** Cliente: os dados da planilha e os do Alexandre são juntados separadamente. */
 export function mesclarCliente(a: Cliente, b: Cliente): Cliente {
@@ -19,6 +20,13 @@ export function mesclarCliente(a: Cliente, b: Cliente): Cliente {
   const usuario = (a._emUsuario ?? 0) >= (b._emUsuario ?? 0) ? a : b;
   const r: Cliente = { ...planilha };
   for (const k of CAMPOS_USUARIO) (r as unknown as Record<string, unknown>)[k] = usuario[k];
+  // correções valem sobre os dados da planilha; correção desfeita volta ao valor da planilha
+  for (const k of CAMPOS_CORRIGIVEIS) {
+    const minha = usuario.correcoes?.[k];
+    const daOutra = planilha.correcoes?.[k];
+    if (minha) (r as unknown as Record<string, unknown>)[k] = minha.valor;
+    else if (daOutra && r[k] === daOutra.valor) (r as unknown as Record<string, unknown>)[k] = daOutra.planilha;
+  }
   return r;
 }
 

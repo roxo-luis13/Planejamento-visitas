@@ -1,4 +1,5 @@
 import type { Cliente, DadosPlanilha, ResumoImportacao } from '../types';
+import { aplicarCorrecoes, atualizarOriginais } from './correcoes';
 
 const PRECISAO_DO_ALEXANDRE = new Set(['confirmado', 'informado']);
 
@@ -33,15 +34,18 @@ export function mesclar(
   const saida: Cliente[] = [];
   const codigosNovos = new Set<string>();
 
-  for (const n of novos) {
-    codigosNovos.add(n.codigo);
-    const antigo = porCodigo.get(n.codigo);
+  for (const planilha of novos) {
+    codigosNovos.add(planilha.codigo);
+    const antigo = porCodigo.get(planilha.codigo);
+    // correções do Alexandre continuam valendo sobre a planilha nova
+    const correcoes = antigo ? atualizarOriginais(antigo.correcoes, planilha) : null;
+    const n = aplicarCorrecoes(planilha, correcoes);
     if (!antigo) {
       resumo.novos++;
       saida.push({ ...n, ativo: 1, importadoEm: agora, endereco: null, local: null, geoStatus: 'pendente', avisoCep: null, notas: '', _emPlanilha: ms, _emUsuario: ms });
       continue;
     }
-    const igual = antigo.ativo && mesmosDados(antigo, n);
+    const igual = antigo.ativo && mesmosDados(antigo, n) && JSON.stringify(antigo.correcoes ?? null) === JSON.stringify(correcoes);
     if (!antigo.ativo) resumo.voltaram++;
     else if (igual) resumo.semMudanca++;
     else resumo.atualizados++;
@@ -60,7 +64,7 @@ export function mesclar(
       }
     }
     // sem mudança: mantém o carimbo (não vira "alteração" para a sincronização)
-    saida.push(igual ? antigo : { ...antigo, ...n, ativo: 1, importadoEm: agora, local, endereco, geoStatus, avisoCep, _emUsuario, _emPlanilha: ms });
+    saida.push(igual ? antigo : { ...antigo, ...n, ativo: 1, importadoEm: agora, local, endereco, geoStatus, avisoCep, correcoes, _emUsuario, _emPlanilha: ms });
   }
 
   for (const antigo of existentes) {

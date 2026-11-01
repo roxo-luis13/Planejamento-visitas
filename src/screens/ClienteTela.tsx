@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { atualizarCliente, db } from '../db';
-import type { Cliente, Endereco } from '../types';
 import { ASSUNTOS, rotuloResultado } from '../types';
 import { resumoVisita } from '../lib/relatorio';
 import RegistroVisita from '../components/RegistroVisita';
 import { alertaFinanceiro, calcularPrioridade, NIVEIS } from '../lib/prioridade';
 import { formatarCep, formatarData, hojeISO, nomeDia, titulo } from '../lib/texto';
-import { alternarNaRota, confirmarLocal, obterGps, refazerSugestao, salvarEndereco } from '../lib/acoes';
+import { alternarNaRota, confirmarLocal, obterGps, refazerSugestao } from '../lib/acoes';
 import Mapa from '../components/Mapa';
-import Folha from '../components/Folha';
+import EditarCliente from '../components/EditarCliente';
 import BotaoNavegar from '../components/Navegar';
 import { enderecoParaMapa } from '../lib/navegar';
 import { PRECISOES, SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
@@ -61,8 +60,19 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
         </button>
       </div>
 
-      <h1 className="nome-cliente">{c.fantasia}</h1>
+      <div className="nome-linha">
+        <h1 className="nome-cliente">{c.fantasia}</h1>
+        <button className="btn btn-sec btn-peq" onClick={() => setEditando(true)}>✏️ Editar</button>
+      </div>
       <div className="item-sub">{c.razao} · <b>{c.codigo}</b></div>
+      {(c.responsavel || c.telefone) && (
+        <div className="contato-cliente">
+          {c.responsavel && <span>👤 {c.responsavel}</span>}
+          {c.telefone && <a href={`tel:${c.telefone.replace(/[^\d+]/g, '')}`}>📞 {c.telefone}</a>}
+          {c.telefone && <a href={`https://wa.me/${(c.telefone.replace(/\D/g, '').length <= 11 ? '55' : '') + c.telefone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">💬 WhatsApp</a>}
+        </div>
+      )}
+      {c.correcoes && <div className="nota-peq">✏️ Dados corrigidos por você: {Object.keys(c.correcoes).map((k) => ({ fantasia: 'nome', razao: 'razão social', bairro: 'bairro', cidade: 'cidade', uf: 'UF', cep: 'CEP' }[k])).join(', ')}.</div>}
       {!c.ativo && <div className="alerta">Este cliente não estava na última planilha importada (fora da carteira).</div>}
       <div className="selos"><SeloPrioridade c={c} /><SeloFinanceiro c={c} /><SeloLocal c={c} /></div>
 
@@ -100,7 +110,7 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
             {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} endereco={enderecoParaMapa(c)} compacto />}
             <button className="btn btn-sec btn-peq" onClick={usarGps}>📍 Estou na loja</button>
             <button className="btn btn-sec btn-peq" onClick={() => setAjustando(c.local ? { lat: c.local.lat, lng: c.local.lng } : { lat: -23.55, lng: -46.63 })}>✥ Ajustar no mapa</button>
-            <button className="btn btn-sec btn-peq" onClick={() => setEditando(true)}>✏️ Corrigir endereço</button>
+            <button className="btn btn-sec btn-peq" onClick={() => setEditando(true)}>✏️ Editar endereço</button>
             {c.local && prec?.alerta && <button className="btn btn-sec btn-peq" onClick={() => refazerSugestao(c.codigo)}>🔄 Buscar sugestão de novo</button>}
           </div>
         )}
@@ -185,40 +195,7 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
       {registrandoHoje && (
         <RegistroVisita data={hojeISO()} cliente={c} checkinEm={null} aoFechar={() => setRegistrandoHoje(false)} />
       )}
-      {editando && <EditarEndereco c={c} aoFechar={() => setEditando(false)} aoSalvar={setMsg} />}
+      {editando && <EditarCliente c={c} aoFechar={() => setEditando(false)} aoSalvar={setMsg} />}
     </div>
-  );
-}
-
-function EditarEndereco({ c, aoFechar, aoSalvar }: { c: Cliente; aoFechar: () => void; aoSalvar: (m: string) => void }) {
-  const [e, setE] = useState<Endereco>(c.endereco ?? { logradouro: '', numero: '', complemento: '', bairro: titulo(c.bairro), cidade: titulo(c.cidade), uf: c.uf, cep: c.cep });
-  const [ocupado, setOcupado] = useState(false);
-  const campo = (k: keyof Endereco, rotulo: string, extra: Record<string, string> = {}) => (
-    <div className="linha-form"><label>{rotulo}</label><input value={e[k]} onChange={(ev) => setE({ ...e, [k]: ev.target.value })} {...extra} /></div>
-  );
-  async function salvar() {
-    setOcupado(true);
-    try {
-      const achou = await salvarEndereco(c, e);
-      aoSalvar(achou ? (c.local?.precisao === 'confirmado' ? 'Endereço salvo (a posição de GPS confirmada foi mantida) ✓' : 'Endereço salvo e localizado no mapa ✓')
-        : 'Endereço salvo, mas não consegui localizá-lo no mapa. Use "Estou na loja" ou "Ajustar no mapa".');
-      aoFechar();
-    } catch {
-      aoSalvar('Sem internet para localizar o endereço agora. Tente de novo mais tarde.');
-      setOcupado(false);
-    }
-  }
-  return (
-    <Folha aberta aoFechar={aoFechar} titulo="Corrigir endereço">
-      {campo('logradouro', 'Rua / Av.')}
-      {campo('numero', 'Número', { inputMode: 'numeric' })}
-      {campo('complemento', 'Complemento')}
-      {campo('bairro', 'Bairro')}
-      {campo('cidade', 'Cidade')}
-      {campo('uf', 'UF')}
-      {campo('cep', 'CEP', { inputMode: 'numeric' })}
-      <p className="nota-peq">Fica salvo no app e não é apagado quando você importar uma planilha nova.</p>
-      <button className="btn btn-bloco" onClick={salvar} disabled={ocupado}>{ocupado ? 'Localizando…' : 'Salvar'}</button>
-    </Folha>
   );
 }
