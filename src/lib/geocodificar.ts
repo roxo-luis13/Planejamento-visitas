@@ -1,3 +1,4 @@
+import { gastar } from './cotaGoogle';
 import type { DadosPlanilha, Endereco, Local, Precisao } from '../types';
 import { normalizar, titulo } from './texto';
 
@@ -94,6 +95,7 @@ function montar(c: DadosPlanilha, lat: number, lng: number, precisao: Precisao, 
 }
 
 async function googlePlaces(buscar: Buscar, chaveApi: string, c: DadosPlanilha): Promise<Sugestao | null> {
+  gastar('lugares'); // passa do limite do dia: cai no gratuito (OpenStreetMap)
   const r = await buscar('https://places.googleapis.com/v1/places:searchText', {
     method: 'POST',
     headers: {

@@ -3,6 +3,7 @@ import type { Cliente, Endereco, LocalSalvo, Partida, Rota, Visita } from '../ty
 import { mesclar } from './mesclar';
 import { otimizarOrdem } from './rota';
 import { rotaGoogle } from './google';
+import { ErroLimite } from './cotaGoogle';
 import { hojeISO } from './texto';
 import { localizarEndereco } from './geocodificar';
 import { iniciarFila } from './filaGeo';
@@ -116,7 +117,8 @@ export async function otimizarRota(data: string, otimizar = true) {
   const voltar = r.retornar && !!r.partida;
   const pts = comLocal.map((p) => clientes.get(p.codigo)!.local!);
 
-  if (cfg.googleKey && origem && pts.length) {
+  let limite: string | null = null;
+  if (cfg.googleKey && origem && pts.length) try {
     // Sem volta: escolhe a última parada do dia pela estimativa, o Google ordena o resto
     const fimFixo = voltar ? undefined : otimizar ? otimizarOrdem(pts, origem, false).at(-1) : pts.length - 1;
     const saida = horarioSaida(r, feitas.length > 0);
@@ -130,7 +132,10 @@ export async function otimizarRota(data: string, otimizar = true) {
     };
     r.otimizadaEm = r.calculo.em;
     await salvarRota(r);
-    return { semLocal: semLocal.length, google: true };
+    return { semLocal: semLocal.length, google: true, limite: null };
+  } catch (e) {
+    // passou do limite gratuito do dia: usa a estimativa em linha reta (sem custo)
+    if (e instanceof ErroLimite) limite = e.message; else throw e;
   }
 
   if (otimizar) {
@@ -140,7 +145,7 @@ export async function otimizarRota(data: string, otimizar = true) {
   r.calculo = null;
   r.otimizadaEm = new Date().toISOString();
   await salvarRota(r);
-  return { semLocal: semLocal.length, google: false };
+  return { semLocal: semLocal.length, google: false, limite };
 }
 
 /** Dados preenchidos no registro da visita (nenhum é obrigatório). */

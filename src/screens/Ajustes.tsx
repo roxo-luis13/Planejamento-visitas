@@ -4,6 +4,7 @@ import { db, lerConfig, salvarConfig } from '../db';
 import type { Precisao, ResumoImportacao } from '../types';
 import { exportarBackup, importarArquivo, restaurarBackup } from '../lib/acoes';
 import { testarChave } from '../lib/google';
+import { LIMITE_DIA, usoHoje } from '../lib/cotaGoogle';
 import { iniciarFila, ouvirFila, pararFila, type EstadoFila } from '../lib/filaGeo';
 import { formatarData } from '../lib/texto';
 import { PRECISOES } from '../components/Selos';
@@ -124,6 +125,9 @@ export default function Ajustes() {
             {cfg.googleKey && <button className="btn btn-sec" onClick={async () => { setChave(''); await salvarConfig({ googleKey: '' }); setMsgChave('Chave removida.'); }}>Remover</button>}
           </div>
           {msgChave && <div className={/✓/.test(msgChave) ? 'alerta-ok' : 'msg'}>{msgChave}</div>}
+          {cfg.googleKey && (() => { const u = usoHoje(); return (
+            <p className="nota-peq">Uso de hoje neste aparelho: {u.rotas}/{LIMITE_DIA.rotas} cálculos de rota · {u.lugares}/{LIMITE_DIA.lugares} buscas de endereço.
+              Passou disso, o app usa as opções gratuitas até o dia seguinte.</p>); })()}
           <details>
             <summary>Como criar a chave (uma vez só)</summary>
             <ol className="nota-peq passos">

@@ -91,6 +91,7 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
     try {
       const r = await otimizarRota(data, otimizar);
       const partes = [r.google ? (otimizar ? 'Rota otimizada pelo Google com o trânsito ✓' : 'Tempos atualizados com o trânsito ✓') : 'Ordem otimizada (estimativa) ✓'];
+      if (r.limite) partes.unshift(`⚠️ ${r.limite} Usei a estimativa em linha reta, sem custo.`);
       if (r.semLocal) partes.push(`${r.semLocal} cliente(s) sem localização ficaram no fim.`);
       setMsg(partes.join(' '));
     } catch (e) { setErro((e as Error).message); } finally { setOcupado(false); }

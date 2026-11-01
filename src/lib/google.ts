@@ -22,8 +22,11 @@ const segundos = (s: string | undefined) => (s ? Number(s.replace('s', '')) || 0
 const ll = (p: Ponto) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } });
 
 export class ErroGoogle extends Error {}
+export { ErroLimite } from './cotaGoogle';
+import { ErroLimite, ehCotaEsgotada, gastar } from './cotaGoogle';
 
 async function chamar(buscar: Buscar, chave: string, url: string, campos: string, corpo: unknown) {
+  gastar(url.includes('routes.googleapis') ? 'rotas' : 'lugares');
   let r: Response;
   try {
     r = await buscar(url, {
@@ -37,6 +40,7 @@ async function chamar(buscar: Buscar, chave: string, url: string, campos: string
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const msg: string = j?.error?.message ?? `erro ${r.status}`;
+    if (ehCotaEsgotada(r.status, msg)) throw new ErroLimite('Limite gratuito de hoje do Google atingido (cota do Google Cloud). Amanhã libera de novo.');
     if (r.status === 403 || /API key|PERMISSION|referer|blocked/i.test(msg)) {
       throw new ErroGoogle(`O Google recusou a chave: ${msg}. Confira em Ajustes se a chave está certa, com a "Routes API" ativada e o site liberado.`);
     }
