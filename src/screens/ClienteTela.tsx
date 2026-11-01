@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { atualizarCliente, db } from '../db';
 import type { Cliente, Endereco } from '../types';
-import { RESULTADOS } from '../types';
+import { ASSUNTOS, rotuloResultado } from '../types';
+import { resumoVisita } from '../lib/relatorio';
+import RegistroVisita from '../components/RegistroVisita';
 import { alertaFinanceiro, calcularPrioridade, NIVEIS } from '../lib/prioridade';
 import { formatarCep, formatarData, hojeISO, nomeDia, titulo } from '../lib/texto';
 import { alternarNaRota, confirmarLocal, obterGps, refazerSugestao, salvarEndereco } from '../lib/acoes';
@@ -15,8 +17,12 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
   const c = useLiveQuery(() => db.clientes.get(codigo), [codigo]);
   const rota = useLiveQuery(() => db.rotas.get(data), [data]);
   const visitas = (useLiveQuery(() => db.historico.where('codigo').equals(codigo).reverse().sortBy('data'), [codigo]) ?? []).filter((v) => !v.removido);
+  const hoje = hojeISO();
+  const visitaHoje = visitas.find((v) => v.data === hoje);
+  const proximoRetorno = visitas.map((v) => v.retorno).filter((d): d is string => !!d && d >= hoje).sort()[0] ?? null;
   const [ajustando, setAjustando] = useState<{ lat: number; lng: number } | null>(null);
   const [editando, setEditando] = useState(false);
+  const [registrandoHoje, setRegistrandoHoje] = useState(false);
   const [msg, setMsg] = useState('');
   const [notas, setNotas] = useState('');
   const campoNotas = useRef<HTMLTextAreaElement>(null);
@@ -154,17 +160,30 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
         <h2>Anotações</h2>
         <textarea ref={campoNotas} rows={3} value={notas} placeholder="Ex: falar com a Maria, atende só de manhã…" onChange={(ev) => setNotas(ev.target.value)}
           onBlur={() => notas !== c.notas && atualizarCliente(c.codigo, { notas })} />
-        <h2>Histórico de visitas</h2>
+        <h2>Visitas</h2>
+        {proximoRetorno && <div className="alerta-neutro" style={{ borderColor: 'var(--azul)' }}>📅 Retorno combinado para <b>{formatarData(proximoRetorno)}</b></div>}
+        <button className="btn btn-bloco" onClick={() => setRegistrandoHoje(true)}>✔️ {visitaHoje ? 'Editar a visita de hoje' : 'Registrar visita hoje'}</button>
         {!visitas.length ? <p className="nota-peq">Nenhuma visita registrada no app.</p> : (
-          <ul className="historico">
+          <ul className="historico rico">
             {visitas.map((v) => {
-              const r = RESULTADOS.find((x) => x.id === v.resultado)!;
-              return <li key={v.id}><b>{formatarData(v.data)}</b> {r.emoji} {r.rotulo}{v.nota ? ` — ${v.nota}` : ''}</li>;
+              const r = rotuloResultado(v.resultado);
+              const resumo = resumoVisita(v);
+              const assuntos = (v.assuntos ?? []).map((a) => ASSUNTOS.find((x) => x.id === a)?.rotulo ?? a).join(', ');
+              return (
+                <li key={v.id}>
+                  <div><b>{formatarData(v.data)}</b> · {r.emoji} {r.rotulo}{resumo ? ` · ${resumo}` : ''}</div>
+                  {(v.contato || assuntos) && <div className="nota-peq">{v.contato ? `Falou com ${v.contato}` : ''}{v.contato && assuntos ? ' · ' : ''}{assuntos}</div>}
+                  {v.nota && <div className="nota-peq">“{v.nota}”</div>}
+                </li>
+              );
             })}
           </ul>
         )}
       </section>
 
+      {registrandoHoje && (
+        <RegistroVisita data={hojeISO()} cliente={c} checkinEm={null} aoFechar={() => setRegistrandoHoje(false)} />
+      )}
       {editando && <EditarEndereco c={c} aoFechar={() => setEditando(false)} aoSalvar={setMsg} />}
     </div>
   );

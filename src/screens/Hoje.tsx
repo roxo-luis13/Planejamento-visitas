@@ -1,15 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, lerConfig, obterRota } from '../db';
-import type { Cliente, Parada, Resultado } from '../types';
-import { RESULTADOS } from '../types';
-import { alternarNaRota, moverParada, otimizarRota, registrarResultado } from '../lib/acoes';
+import type { Cliente, Parada } from '../types';
+import { rotuloResultado } from '../types';
+import { resumoVisita } from '../lib/relatorio';
+import RegistroVisita from '../components/RegistroVisita';
+import { alternarNaRota, marcarChegada, moverParada, otimizarRota } from '../lib/acoes';
 import { estimar } from '../lib/rota';
 import { decodificarPolyline, horarios } from '../lib/google';
 import { linksRotaGoogle } from '../lib/navegar';
 import { hojeISO, nomeDia, somarDias, titulo } from '../lib/texto';
 import Mapa, { type Marcador } from '../components/Mapa';
-import Folha from '../components/Folha';
 import Saida from '../components/Saida';
 import BotaoNavegar from '../components/Navegar';
 import { PRECISOES, SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
@@ -31,6 +32,8 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
   const [msg, setMsg] = useState('');
   const [erro, setErro] = useState('');
   const [registrando, setRegistrando] = useState<Parada | null>(null);
+  const visitasDoDia = useLiveQuery(() => db.historico.where('data').equals(data).toArray(), [data]) ?? [];
+  const visitaDe = useMemo(() => new Map(visitasDoDia.filter((v) => !v.removido).map((v) => [v.codigo, v])), [visitasDoDia]);
   const [ocupado, setOcupado] = useState(false);
 
   const paradas = rota?.paradas ?? [];
@@ -170,7 +173,8 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
             {paradas.map((p, i) => {
               const c = clientes.get(p.codigo);
               if (!c) return null;
-              const res = RESULTADOS.find((r) => r.id === p.resultado);
+              const res = p.resultado ? rotuloResultado(p.resultado) : null;
+              const v = visitaDe.get(p.codigo);
               const pv = prev?.porCodigo.get(c.codigo);
               return (
                 <li key={p.codigo} className={`item parada ${p.resultado ? 'feita' : ''}`}>
@@ -188,11 +192,15 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
                         </div>
                       )}
                       <div className="selos"><SeloPrioridade c={c} /><SeloFinanceiro c={c} /><SeloLocal c={c} /></div>
-                      {res && <div className="resultado">{res.emoji} {res.rotulo}{p.nota ? ` — ${p.nota}` : ''}</div>}
+                      {res && <div className="resultado">{res.emoji} {res.rotulo}{v && resumoVisita(v) ? ` · ${resumoVisita(v)}` : ''}</div>}
+                      {!p.resultado && p.checkinEm && <div className="eta">📍 No cliente desde {hora(new Date(p.checkinEm))}</div>}
                     </div>
                     <div className="botoes">
                       {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} compacto />}
-                      <button className="btn btn-sec btn-peq" onClick={() => setRegistrando(p)}>{p.resultado ? '✏️ Resultado' : '✔️ Registrar'}</button>
+                      {!p.resultado && !p.checkinEm && data === hojeISO() && (
+                        <button className="btn btn-sec btn-peq" onClick={() => marcarChegada(data, p.codigo)}>📍 Cheguei</button>
+                      )}
+                      <button className={`btn btn-peq ${p.resultado ? 'btn-sec' : ''}`} onClick={() => setRegistrando(p)}>{p.resultado ? '✏️ Editar visita' : '✔️ Registrar visita'}</button>
                       <button className="btn-icone peq" onClick={() => moverParada(data, p.codigo, -1)} disabled={i === 0}>↑</button>
                       <button className="btn-icone peq" onClick={() => moverParada(data, p.codigo, 1)} disabled={i === paradas.length - 1}>↓</button>
                       <button className="btn-icone peq" onClick={() => confirm(`Tirar ${c.fantasia} da rota?`) && alternarNaRota(data, p.codigo)}>✕</button>
@@ -207,36 +215,11 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
         </>
       )}
 
-      {registrando && (
-        <RegistrarVisita parada={registrando} nome={clientes.get(registrando.codigo)?.fantasia ?? ''} data={data} aoFechar={() => setRegistrando(null)} />
+      {registrando && clientes.get(registrando.codigo) && (
+        <RegistroVisita data={data} cliente={clientes.get(registrando.codigo)!} aoFechar={() => setRegistrando(null)}
+          checkinEm={paradas.find((x) => x.codigo === registrando.codigo)?.checkinEm ?? null} />
       )}
     </div>
   );
 }
 
-function RegistrarVisita({ parada, nome, data, aoFechar }: { parada: Parada; nome: string; data: string; aoFechar: () => void }) {
-  const [resultado, setResultado] = useState<Resultado | null>(parada.resultado);
-  const [nota, setNota] = useState(parada.nota);
-  const [novaData, setNovaData] = useState(somarDias(data, 7));
-  async function salvar() {
-    await registrarResultado(data, parada.codigo, resultado, nota, resultado === 'reagendar' ? novaData : undefined);
-    aoFechar();
-  }
-  return (
-    <Folha aberta aoFechar={aoFechar} titulo={nome}>
-      <div className="opcoes">
-        {RESULTADOS.map((r) => (
-          <button key={r.id} className={`opcao ${resultado === r.id ? 'ativo' : ''}`} onClick={() => setResultado(r.id)}>{r.emoji} {r.rotulo}</button>
-        ))}
-      </div>
-      {resultado === 'reagendar' && (
-        <div className="linha-form"><label>Nova data</label><input type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} /></div>
-      )}
-      <textarea placeholder="Anotação (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} rows={3} />
-      <div className="botoes">
-        <button className="btn" onClick={salvar} disabled={!resultado}>Salvar</button>
-        {parada.resultado && <button className="btn btn-sec" onClick={async () => { await registrarResultado(data, parada.codigo, null, ''); aoFechar(); }}>Desfazer</button>}
-      </div>
-    </Folha>
-  );
-}

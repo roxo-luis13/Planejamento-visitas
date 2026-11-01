@@ -65,15 +65,50 @@ export interface Cliente extends DadosPlanilha {
   _emUsuario?: number;          // endereço, localização, notas
 }
 
-export type Resultado = 'pedido' | 'sem_pedido' | 'fechado' | 'ausente' | 'reagendar';
+/** Resultado da visita. 'visitado' = registrada sem escolher resultado (nada é obrigatório). */
+export type Resultado = 'pedido' | 'sem_pedido' | 'nao_atendido' | 'reagendado' | 'visitado';
 
 export const RESULTADOS: { id: Resultado; rotulo: string; emoji: string }[] = [
   { id: 'pedido', rotulo: 'Pedido feito', emoji: '✅' },
   { id: 'sem_pedido', rotulo: 'Sem pedido', emoji: '➖' },
-  { id: 'fechado', rotulo: 'Loja fechada', emoji: '🔒' },
-  { id: 'ausente', rotulo: 'Responsável ausente', emoji: '👤' },
-  { id: 'reagendar', rotulo: 'Reagendar', emoji: '📅' }
+  { id: 'nao_atendido', rotulo: 'Não atendido', emoji: '🔒' },
+  { id: 'reagendado', rotulo: 'Reagendado', emoji: '📅' }
 ];
+export const ROTULO_VISITADO = { rotulo: 'Visita registrada', emoji: '✔️' };
+export const rotuloResultado = (r: Resultado | null | undefined) =>
+  r === 'visitado' ? ROTULO_VISITADO : RESULTADOS.find((x) => x.id === r) ?? ROTULO_VISITADO;
+
+/** Listas fixas: viram categorias somáveis nos relatórios. */
+export const MOTIVOS_SEM_PEDIDO = [
+  { id: 'estoque_alto', rotulo: 'Estoque alto' },
+  { id: 'sem_verba', rotulo: 'Sem verba / financeiro' },
+  { id: 'preco', rotulo: 'Preço' },
+  { id: 'concorrente', rotulo: 'Comprou de concorrente' },
+  { id: 'vai_pensar', rotulo: 'Vai pensar / retornar' },
+  { id: 'nao_trabalha_marca', rotulo: 'Não trabalha mais com a marca' },
+  { id: 'outro', rotulo: 'Outro' }
+] as const;
+export const MOTIVOS_NAO_ATENDIDO = [
+  { id: 'fechado', rotulo: 'Loja fechada' },
+  { id: 'ausente', rotulo: 'Responsável ausente' },
+  { id: 'sem_tempo', rotulo: 'Sem tempo para atender' },
+  { id: 'outro', rotulo: 'Outro' }
+] as const;
+export const ASSUNTOS = [
+  { id: 'colecao', rotulo: 'Coleção nova' },
+  { id: 'troca', rotulo: 'Troca / garantia' },
+  { id: 'financeiro', rotulo: 'Financeiro / cobrança' },
+  { id: 'vitrine', rotulo: 'Vitrine / exposição' },
+  { id: 'treinamento', rotulo: 'Treinamento' },
+  { id: 'reclamacao', rotulo: 'Reclamação' }
+] as const;
+export const MARCAS_PADRAO = ['MORMAII', 'COLCCI', 'YOUY'];
+
+export interface Pedido {
+  pecas: Record<string, number>;   // por marca
+  valor: number | null;            // R$
+  numero: string;
+}
 
 export interface Parada {
   codigo: string;
@@ -123,7 +158,16 @@ export interface Visita {
   data: string;
   resultado: Resultado;
   nota: string;
-  em: string;
+  em: string;                 // quando foi registrada
+  // ---- detalhes (todos opcionais) ----
+  motivo?: string | null;     // MOTIVOS_SEM_PEDIDO ou MOTIVOS_NAO_ATENDIDO
+  contato?: string;
+  assuntos?: string[];
+  pedido?: Pedido | null;
+  retorno?: string | null;    // data de retorno combinada (yyyy-mm-dd)
+  chegadaEm?: string | null;  // check-in
+  saidaEm?: string | null;
+  gps?: { lat: number; lng: number; precisaoM: number; distanciaM: number | null } | null;
   removido?: boolean;         // visita desfeita (mantida para a sincronização saber)
   _em?: number;
 }

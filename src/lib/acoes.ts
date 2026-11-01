@@ -1,5 +1,5 @@
 import { atualizarCliente, db, lerConfig, obterRota, salvarConfig } from '../db';
-import type { Cliente, Endereco, LocalSalvo, Partida, Resultado, Rota, Visita } from '../types';
+import type { Cliente, Endereco, LocalSalvo, Partida, Rota, Visita } from '../types';
 import { mesclar } from './mesclar';
 import { otimizarOrdem } from './rota';
 import { rotaGoogle } from './google';
@@ -143,30 +143,68 @@ export async function otimizarRota(data: string, otimizar = true) {
   return { semLocal: semLocal.length, google: false };
 }
 
-export async function registrarResultado(data: string, codigo: string, resultado: Resultado | null, nota: string, reagendarPara?: string) {
+/** Dados preenchidos no registro da visita (nenhum é obrigatório). */
+export type DadosVisita = Omit<Visita, 'id' | 'codigo' | 'data' | 'em' | 'removido' | '_em'> & { lancarRetornoNaRota?: boolean };
+
+async function colocarNaRota(dia: string, codigo: string, nota: string) {
+  const r = await obterRota(dia);
+  if (r.paradas.some((x) => x.codigo === codigo)) return;
+  r.paradas.push({ codigo, resultado: null, nota, checkinEm: null });
+  invalidar(r);
+  await salvarRota(r);
+}
+
+/** Grava (ou desfaz, com dados = null) a visita de um cliente num dia. */
+export async function registrarVisita(data: string, codigo: string, dados: DadosVisita | null) {
   const r = await obterRota(data);
-  const p = r.paradas.find((x) => x.codigo === codigo);
+  let p = r.paradas.find((x) => x.codigo === codigo);
+  if (!p && dados) { // visita fora da rota (ex: registrada pela ficha do cliente)
+    p = { codigo, resultado: null, nota: '', checkinEm: null };
+    r.paradas.push(p);
+  }
   if (!p) return;
   const agora = new Date().toISOString();
-  p.resultado = resultado;
-  p.nota = nota;
-  p.checkinEm = resultado ? p.checkinEm ?? agora : null;
+  const id = `${codigo}|${data}`;
+  const anterior = await db.historico.get(id);
+  p.resultado = dados ? dados.resultado : null;
+  p.nota = dados?.nota ?? '';
+  if (!dados) p.checkinEm = null;
+  else p.checkinEm = p.checkinEm ?? dados.chegadaEm ?? agora;
   await db.transaction('rw', db.rotas, db.historico, async () => {
     await salvarRota(r);
-    const id = `${codigo}|${data}`;
-    // desfazer não apaga: marca como removido para os outros aparelhos saberem
-    await db.historico.put(resultado
-      ? { id, codigo, data, resultado, nota, em: agora, _em: Date.now() }
-      : { ...((await db.historico.get(id)) ?? { id, codigo, data, resultado: 'sem_pedido' as const, nota: '', em: agora }), removido: true, _em: Date.now() });
-  });
-  if (resultado === 'reagendar' && reagendarPara) {
-    const outra = await obterRota(reagendarPara);
-    if (!outra.paradas.some((x) => x.codigo === codigo)) {
-      outra.paradas.push({ codigo, resultado: null, nota: nota ? `Reagendado de ${data}: ${nota}` : `Reagendado de ${data}`, checkinEm: null });
-      outra.otimizadaEm = null;
-      await salvarRota(outra);
+    if (dados) {
+      const { lancarRetornoNaRota: _ignorar, ...resto } = dados;
+      void _ignorar;
+      await db.historico.put({
+        ...resto, id, codigo, data,
+        chegadaEm: p!.checkinEm, saidaEm: dados.saidaEm ?? anterior?.saidaEm ?? agora,
+        em: anterior && !anterior.removido ? anterior.em : agora, removido: false, _em: Date.now()
+      });
+    } else {
+      // desfazer não apaga: marca como removido para os outros aparelhos saberem
+      await db.historico.put({ ...(anterior ?? { id, codigo, data, resultado: 'visitado' as const, nota: '', em: agora }), removido: true, _em: Date.now() });
     }
+  });
+  if (dados?.retorno && dados.lancarRetornoNaRota && dados.retorno !== data) {
+    const motivo = dados.resultado === 'reagendado' ? 'Reagendado' : 'Retorno combinado';
+    await colocarNaRota(dados.retorno, codigo, `${motivo} em ${data.split('-').reverse().join('/')}${dados.nota ? `: ${dados.nota}` : ''}`);
   }
+}
+
+/** "Cheguei": marca a chegada e, se possível, a posição do GPS. */
+export async function marcarChegada(data: string, codigo: string) {
+  const r = await obterRota(data);
+  const p = r.paradas.find((x) => x.codigo === codigo);
+  if (!p) return null;
+  p.checkinEm = new Date().toISOString();
+  await salvarRota(r);
+  return p.checkinEm;
+}
+
+/** Última visita (não desfeita) de um cliente, para sugerir o contato. */
+export async function ultimaVisita(codigo: string): Promise<Visita | undefined> {
+  const vs = (await db.historico.where('codigo').equals(codigo).toArray()).filter((v) => !v.removido);
+  return vs.sort((a, b) => (a.data < b.data ? 1 : -1))[0];
 }
 
 // ---------- Localização do cliente ----------

@@ -312,3 +312,22 @@ details.avancado > summary { font-size: 16px; font-weight: 600; color: var(--sub
 details.avancado > summary::before { content: '▸ '; }
 details.avancado[open] > summary::before { content: '▾ '; }
 details.avancado[open] > summary { margin-bottom: 8px; }
+
+/* Registro da visita */
+.registro .sub-titulo { margin-top: 18px; }
+.registro-sub { margin: 0 0 4px; }
+.registro textarea, .registro input:not([type=checkbox]) { margin-top: 2px; }
+.pecas { display: grid; gap: 8px; }
+.pecas-linha { display: grid; grid-template-columns: 1fr 36px 72px 36px; gap: 8px; align-items: center; }
+.pecas-linha input { text-align: center; padding: 8px 4px; }
+.grade-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.contagem { text-transform: none; letter-spacing: 0; color: var(--azul); font-weight: 700; margin-left: 6px; }
+.chip.sugestao { margin-top: 8px; border-style: dashed; color: var(--azul); }
+.retorno-linha { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.retorno-linha input { flex: 1; }
+.gps-info { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; background: var(--azul-claro2); border: 1px solid var(--borda); border-radius: 10px; padding: 10px; }
+.registro-acoes { position: sticky; bottom: 0; background: var(--cartao); padding: 10px 0 4px; margin-top: 16px; border-top: 1px solid var(--borda); }
+.registro-acoes .btn { flex: 1; }
+.btn-link.perigo { color: var(--vermelho); }
+.historico.rico { list-style: none; padding: 0; }
+.historico.rico li { padding: 8px 0; border-bottom: 1px solid var(--borda); display: grid; gap: 2px; }

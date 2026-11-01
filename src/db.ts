@@ -27,6 +27,17 @@ export class BancoVisitas extends Dexie {
       })));
     });
     this.version(3).stores({ visitas: null });
+    // v4: resultados novos (fechado/ausente -> não atendido + motivo; reagendar -> reagendado)
+    this.version(4).stores({}).upgrade(async (tx) => {
+      const conv = (r: string) => (r === 'fechado' || r === 'ausente' ? 'nao_atendido' : r === 'reagendar' ? 'reagendado' : r);
+      await tx.table('historico').toCollection().modify((v: Record<string, unknown>) => {
+        if (v.resultado === 'fechado' || v.resultado === 'ausente') v.motivo = v.resultado;
+        v.resultado = conv(v.resultado as string);
+      });
+      await tx.table('rotas').toCollection().modify((r: { paradas: { resultado: string | null }[] }) => {
+        r.paradas.forEach((p) => { if (p.resultado) p.resultado = conv(p.resultado); });
+      });
+    });
   }
 }
 

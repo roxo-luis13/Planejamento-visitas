@@ -8,6 +8,7 @@ import { iniciarFila, ouvirFila, pararFila, type EstadoFila } from '../lib/filaG
 import { formatarData } from '../lib/texto';
 import { PRECISOES } from '../components/Selos';
 import CartaoDrive from '../components/CartaoDrive';
+import ExportarVisitas from '../components/ExportarVisitas';
 
 export default function Ajustes() {
   const cfg = useLiveQuery(() => lerConfig(), []);
@@ -72,6 +73,8 @@ export default function Ajustes() {
   return (
     <div>
       <CartaoDrive />
+
+      <ExportarVisitas />
 
       <section className="cartao">
         <h2>Planilha de clientes</h2>

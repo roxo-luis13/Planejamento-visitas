@@ -7,10 +7,26 @@ Roda no Safari do iPhone e é instalado em *Compartilhar → Adicionar à Tela d
 
 | Tela | Funções |
 |---|---|
-| **Rota** | Dia selecionável · **saída escolhida aqui** (localização atual, locais salvos como Casa/Escritório, ou busca de endereço; ★ = padrão dos próximos dias) · horário de saída · voltar ou não à saída · **otimizar com trânsito (Google)** · km reais, tempo com trânsito e horário de chegada em cada cliente · traçado pelas ruas no mapa · navegar (Apple Mapas / Google Maps / Waze) · registrar resultado da visita |
+| **Rota** | 📍 Cheguei e **registro da visita** · dia selecionável · **saída escolhida aqui** (localização atual, locais salvos como Casa/Escritório, ou busca de endereço; ★ = padrão dos próximos dias) · horário de saída · voltar ou não à saída · **otimizar com trânsito (Google)** · km reais, tempo com trânsito e horário de chegada em cada cliente · traçado pelas ruas no mapa · navegar (Apple Mapas / Google Maps / Waze) · registrar resultado da visita |
 | **Carteira** | Busca · **filtros com várias opções**: microrregiões, cidades e bairros (com busca digitando; bairro escolhido junto com a cidade), níveis de prioridade e situação financeira (sem pendência / do cliente / do grupo) · dentro de um filtro vale qualquer opção marcada, entre filtros vale todas · "Limpar filtros" · ordenação · botão ＋ para pôr na rota do dia · barra fixa com os selecionados (ver, desmarcar um a um ou todos) e filtro "Só selecionados" |
 | **Cliente** | Endereço com nível de precisão e alertas · "Estou na loja" (grava o GPS) · ajustar no mapa · corrigir endereço · compras por marca e ano · frequência · financeiro · grupo/rede · anotações · histórico de visitas |
 | **Ajustes** | Chave do Google (com passo a passo e teste) · importar planilha · progresso das sugestões de endereço · tempo por visita · backup/restauração |
+
+### Registro da visita (nada é obrigatório)
+Na Rota, **📍 Cheguei** marca a chegada; **Registrar visita** abre o formulário (também dá para registrar pela ficha do cliente,
+para visitas fora da rota):
+- **Resultado:** Pedido feito · Sem pedido (com motivo) · Não atendido (com motivo) · Reagendado. Sem escolher, fica "Visita registrada".
+- **Pedido:** peças por marca, valor (R$) e nº do pedido.
+- **Com quem falou** (sugere o contato da última visita) e **assuntos tratados**.
+- **Próximo retorno** (+7/+15/+30 dias ou o ciclo de compra do cliente), que pode entrar direto na rota daquele dia.
+- Observação; horário de chegada/saída; distância do GPS até a loja (se a localização estiver liberada), com opção de gravar como local da loja.
+
+Motivos e assuntos são **listas fixas**, para poderem ser somados nos relatórios.
+
+### Relatórios
+- **Ajustes → 📊 Relatório de visitas → Exportar para Excel:** uma linha por visita, com cliente, cidade, microrregião, grupo,
+  resultado, motivo, contato, assuntos, peças por marca, total, valor, nº do pedido, retorno, observação, duração e distância.
+- Tela de relatórios dentro do app: próximo passo.
 
 ### Prioridade de visita
 `ciclo = 365 ÷ FREQ.MEDIA` · `atraso = dias desde o último faturamento − ciclo`

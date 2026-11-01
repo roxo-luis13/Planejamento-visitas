@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { decodificarPolyline, horarios, rotaGoogle, type Buscar } from '../src/lib/google';
 import { db, obterRota, salvarConfig } from '../src/db';
-import { alternarNaRota, definirPartida, otimizarRota, registrarResultado, definirHoraSaida, salvarLocal } from '../src/lib/acoes';
+import { alternarNaRota, definirPartida, otimizarRota, registrarVisita, definirHoraSaida, salvarLocal } from '../src/lib/acoes';
 import type { Cliente } from '../src/types';
 
 const resposta = (j: unknown, status = 200) => new Response(JSON.stringify(j), { status });
@@ -105,7 +105,7 @@ describe('otimizarRota com Google', () => {
     expect(rota.calculo?.durS).toBe(2400);
 
     // registrar visita não apaga o cálculo; mexer na rota apaga
-    await registrarResultado(dia, 'C', 'pedido', '');
+    await registrarVisita(dia, 'C', { resultado: 'pedido', nota: '' });
     expect((await obterRota(dia)).calculo).not.toBeNull();
     await alternarNaRota(dia, 'B');
     rota = await obterRota(dia);
