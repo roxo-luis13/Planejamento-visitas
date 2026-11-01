@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import type { Cliente } from '../types';
 import { calcularPrioridade, NIVEIS, type NivelPrioridade } from '../lib/prioridade';
-import { chaveBairro, FILTROS_VAZIOS, filtrosAtivos, passaFiltros, passaLugar, podarLugar, type FiltroFin, type Filtros } from '../lib/filtros';
+import { chaveBairro, FILTROS_VAZIOS, marcasDoCliente, filtrosAtivos, passaFiltros, passaLugar, podarLugar, type FiltroFin, type Filtros } from '../lib/filtros';
 import { hojeISO, nomeDia, titulo } from '../lib/texto';
 import { alternarNaRota, desmarcarTodos } from '../lib/acoes';
 import Folha from '../components/Folha';
@@ -44,6 +44,14 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
     const lista = base.filter((c) => passaLugar(c, f, 'cidade'));
     const variasCidades = new Set(lista.map((c) => c.cidade)).size > 1;
     return contar(lista, chaveBairro, (c) => (variasCidades ? `${titulo(c.bairro)} · ${titulo(c.cidade)}` : titulo(c.bairro)));
+  }, [base, f]);
+
+  // Marcas: todas as que aparecem na planilha (novas marcas entram sozinhas ao importar), com nº de clientes
+  const marcas = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of base) for (const x of c.marcas) if (!m.has(x.nome)) m.set(x.nome, 0); // marca da planilha sem venda aparece com 0
+    for (const c of base) if (passaLugar(c, f)) for (const nome of marcasDoCliente(c)) m.set(nome, (m.get(nome) ?? 0) + 1);
+    return [...m].map(([valor, qtd]): Opcao => ({ valor, rotulo: titulo(valor), qtd })).sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
   }, [base, f]);
 
   const contagem = useMemo(() => {
@@ -96,6 +104,7 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
         <Escolha rotuloCampo="Microrregião" vazio="Todas" valores={f.micros} opcoes={micros} aoMudar={(v) => mudar({ micros: v })} />
         <Escolha rotuloCampo="Cidade" vazio="Todas" valores={f.cidades} opcoes={cidades} aoMudar={(v) => mudar({ cidades: v })} />
         <Escolha rotuloCampo="Bairro" vazio="Todos" valores={f.bairros} opcoes={bairros} aoMudar={(v) => mudar({ bairros: v })} />
+        <Escolha rotuloCampo="Marca" vazio="Todas" valores={f.marcas} opcoes={marcas} aoMudar={(v) => mudar({ marcas: v })} />
         <div className="chips quebra" style={{ gridColumn: "1 / -1" }}>
           <span className="chips-rotulo">💲 Financeiro:</span>
           {FIN.map((x) => (
@@ -120,6 +129,7 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
             <div className="item-corpo" onClick={() => abrirCliente(c.codigo)}>
               <div className="item-titulo">{c.fantasia} <span className="cod">{c.codigo}</span></div>
               <div className="item-sub">{titulo(c.bairro)} · {titulo(c.cidade)}{c.rede ? ` · ${c.rede.replace(/^\S+\s/, '')}` : ''}</div>
+              {f.marcas.length > 0 && <div className="item-sub">🕶️ {marcasDoCliente(c).map(titulo).join(', ')}</div>}
               <div className="selos"><SeloPrioridade c={c} /><SeloFinanceiro c={c} /><SeloLocal c={c} /></div>
             </div>
             {c.ativo ? (

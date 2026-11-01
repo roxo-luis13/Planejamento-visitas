@@ -11,10 +11,15 @@ export interface Filtros {
   bairros: string[];        // chave "CIDADE|BAIRRO" (há "Centro" em várias cidades)
   niveis: NivelPrioridade[];
   fin: FiltroFin[];
+  marcas: string[];         // marcas que o cliente trabalha (vêm das colunas da planilha)
   busca: string;
 }
 
-export const FILTROS_VAZIOS: Filtros = { micros: [], cidades: [], bairros: [], niveis: [], fin: [], busca: '' };
+export const FILTROS_VAZIOS: Filtros = { micros: [], cidades: [], bairros: [], niveis: [], fin: [], marcas: [], busca: '' };
+
+/** Marcas com faturamento na planilha (data do último faturamento ou peças em algum ano). */
+export const marcasDoCliente = (c: Pick<Cliente, 'marcas'>) =>
+  c.marcas.filter((m) => m.ultFat || m.pecas.some((p) => p.qtd > 0)).map((m) => m.nome);
 
 export const chaveBairro = (c: Pick<Cliente, 'cidade' | 'bairro'>) => `${c.cidade}|${c.bairro}`;
 
@@ -32,9 +37,10 @@ export function passaFiltros(c: Cliente, f: Filtros, prio: Prioridade): boolean 
   if (!passaLugar(c, f)) return false;
   if (f.niveis.length && !f.niveis.includes(prio.nivel)) return false;
   if (f.fin.length && !f.fin.includes(alertaFinanceiro(c).nivel)) return false;
+  if (f.marcas.length) { const ms = marcasDoCliente(c); if (!f.marcas.some((m) => ms.includes(m))) return false; }
   const q = normalizar(f.busca);
   if (q) {
-    const alvo = normalizar(`${c.fantasia} ${c.razao} ${c.codigo} ${c.grupo} ${c.rede} ${c.bairro} ${c.cidade}`);
+    const alvo = normalizar(`${c.fantasia} ${c.razao} ${c.codigo} ${c.grupo} ${c.rede} ${c.bairro} ${c.cidade} ${marcasDoCliente(c).join(' ')}`);
     if (!q.split(' ').every((p) => alvo.includes(p))) return false;
   }
   return true;
@@ -49,5 +55,5 @@ export function podarLugar(clientes: Cliente[], f: Filtros): Filtros {
 }
 
 export function filtrosAtivos(f: Filtros): number {
-  return f.micros.length + f.cidades.length + f.bairros.length + f.niveis.length + f.fin.length + (f.busca.trim() ? 1 : 0);
+  return f.micros.length + f.cidades.length + f.bairros.length + f.niveis.length + f.fin.length + f.marcas.length + (f.busca.trim() ? 1 : 0);
 }
