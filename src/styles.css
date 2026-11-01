@@ -168,21 +168,32 @@ details input { margin-top: 6px; }
 .passos li { margin: 6px 0; }
 code { background: #eef1f5; padding: 1px 4px; border-radius: 4px; font-size: 12px; word-break: break-all; }
 
-/* Campo de escolha com busca (Carteira) */
-.escolha { grid-column: 1 / -1; position: relative; display: flex; align-items: center; background: #fff; border: 1px solid var(--borda); border-radius: 10px; }
+/* Campo de escolha múltipla com busca (Carteira) */
+.escolha { grid-column: 1 / -1; position: relative; background: #fff; border: 1px solid var(--borda); border-radius: 10px; }
 .escolha.com-valor { border-color: var(--azul); background: #f3f7fd; }
-.escolha-rotulo { flex: none; font-size: 13px; color: var(--sub); padding-left: 12px; min-width: 96px; }
-.escolha input { border: 0; background: transparent; padding: 10px 8px; flex: 1; min-width: 0; }
-.escolha input:focus { outline: none; }
-.escolha:focus-within { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(11,92,173,.15); }
-.escolha-limpar { flex: none; border: 0; background: #dde6f3; color: var(--azul); width: 28px; height: 28px; border-radius: 14px; margin-right: 8px; font-size: 13px; }
-.escolha-lista { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 700; list-style: none; margin: 0; padding: 4px 0;
-  background: #fff; border: 1px solid var(--borda); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.15); max-height: 280px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.escolha-lista button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 0; background: none;
-  padding: 11px 14px; font-size: 16px; text-align: left; color: var(--texto); cursor: pointer; }
-.escolha-lista button:active, .escolha-lista button.sel { background: #e8f0fb; color: var(--azul); }
+.escolha.aberta { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(11,92,173,.15); }
+.escolha-topo { display: flex; align-items: flex-start; min-height: 44px; cursor: text; }
+.escolha-rotulo { flex: none; font-size: 13px; color: var(--sub); padding: 13px 0 0 12px; min-width: 96px; }
+.escolha-campo { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; padding: 6px 8px 6px 0; }
+.escolha-campo input { border: 0; background: transparent; padding: 6px 4px; flex: 1; min-width: 110px; width: auto; }
+.escolha-campo input:focus { outline: none; }
+.etiqueta { display: inline-flex; align-items: center; gap: 2px; background: var(--azul); color: #fff; border-radius: 16px; padding: 3px 4px 3px 10px; font-size: 14px; max-width: 100%; }
+.etiqueta button { border: 0; background: rgba(255,255,255,.25); color: #fff; width: 22px; height: 22px; border-radius: 11px; font-size: 11px; flex: none; cursor: pointer; }
+.escolha-lista { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 700; background: #fff; border: 1px solid var(--borda);
+  border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.15); overflow: hidden; }
+.escolha-lista ul { list-style: none; margin: 0; padding: 4px 0; max-height: 300px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.escolha-acoes { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--borda); background: #fafbfc; font-size: 13px; color: var(--sub); }
+.escolha-acoes span { flex: 1; }
+.escolha-acoes .btn-link { font-size: 14px; padding: 4px; }
+.escolha-lista li > button { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 10px 14px; font-size: 16px; text-align: left; color: var(--texto); cursor: pointer; }
+.escolha-lista li > button.sel { background: #e8f0fb; }
+.escolha-texto { flex: 1; min-width: 0; }
+.caixa-marcar { flex: none; width: 22px; height: 22px; border: 2px solid #b8c2d0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+.sel .caixa-marcar { background: var(--azul); border-color: var(--azul); }
 .escolha-lista small { color: var(--sub); font-size: 13px; flex: none; }
 .escolha-nada { padding: 10px 14px; color: var(--sub); font-size: 14px; }
+.chips-rotulo { flex: none; align-self: center; font-size: 13px; color: var(--sub); }
+.limpar-filtros { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--sub); margin: 4px 4px 0; }
 /* ao rolar até o campo, deixa espaço para o título fixo no topo */
 .escolha { scroll-margin-top: calc(env(safe-area-inset-top) + 64px); }
 
@@ -201,3 +212,6 @@ code { background: #eef1f5; padding: 1px 4px; border-radius: 4px; font-size: 12p
 .btn-desmarcar { flex: none; width: 40px; height: 40px; border-radius: 20px; border: 0; background: #fdecea; color: #d93025; font-size: 16px; font-weight: 700; }
 /* espaço para a barra não cobrir o último cliente */
 .conteudo:has(.barra-selecionados) { padding-bottom: 96px; }
+/* fechado e com etiquetas: o campo de digitar não ocupa uma linha inteira */
+.escolha.com-valor:not(.aberta) .escolha-campo input { min-width: 8px; flex: 1 1 8px; padding: 6px 0; }
+.chips.quebra { flex-wrap: wrap; overflow: visible; }

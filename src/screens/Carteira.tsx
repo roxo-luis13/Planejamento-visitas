@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import type { Cliente } from '../types';
-import { alertaFinanceiro, calcularPrioridade, NIVEIS, type NivelPrioridade } from '../lib/prioridade';
-import { hojeISO, nomeDia, normalizar, titulo } from '../lib/texto';
+import { calcularPrioridade, NIVEIS, type NivelPrioridade } from '../lib/prioridade';
+import { chaveBairro, FILTROS_VAZIOS, filtrosAtivos, passaFiltros, passaLugar, podarLugar, type FiltroFin, type Filtros } from '../lib/filtros';
+import { hojeISO, nomeDia, titulo } from '../lib/texto';
 import { alternarNaRota, desmarcarTodos } from '../lib/acoes';
 import Folha from '../components/Folha';
 import { SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
@@ -16,12 +17,7 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
   const rota = useLiveQuery(() => db.rotas.get(data), [data]);
   const naRota = useMemo(() => new Set(rota?.paradas.map((p) => p.codigo) ?? []), [rota]);
 
-  const [busca, setBusca] = useState('');
-  const [nivel, setNivel] = useState<NivelPrioridade | 'todos'>('todos');
-  const [soFin, setSoFin] = useState<'todos' | 'com' | 'sem'>('todos');
-  const [micro, setMicro] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [bairro, setBairro] = useState('');
+  const [f, setF] = useState<Filtros>(FILTROS_VAZIOS);
   const [ordem, setOrdem] = useState<Ordem>('prioridade');
   const [foraCarteira, setForaCarteira] = useState(false);
   const [limite, setLimite] = useState(80);
@@ -32,48 +28,45 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
   const base = useMemo(() => todos.filter((c) => (foraCarteira ? !c.ativo : c.ativo)), [todos, foraCarteira]);
   const prio = useMemo(() => new Map(base.map((c) => [c.codigo, calcularPrioridade(c, hoje)])), [base, hoje]);
 
-  // Opções com a quantidade de clientes em cada uma
-  const opcoes = (lista: Cliente[], campo: 'micro' | 'cidade' | 'bairro'): Opcao[] => {
-    const cont = new Map<string, number>();
-    for (const c of lista) cont.set(c[campo], (cont.get(c[campo]) ?? 0) + 1);
-    return [...cont.entries()].map(([valor, qtd]) => ({ valor, rotulo: titulo(valor), qtd })).sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  // Opções em cascata, com a quantidade de clientes em cada uma
+  const contar = (lista: Cliente[], chave: (c: Cliente) => string, rotulo: (c: Cliente) => string): Opcao[] => {
+    const m = new Map<string, Opcao>();
+    for (const c of lista) {
+      const k = chave(c);
+      const o = m.get(k);
+      if (o) o.qtd!++; else m.set(k, { valor: k, rotulo: rotulo(c), qtd: 1 });
+    }
+    return [...m.values()].sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
   };
-  const micros = useMemo(() => opcoes(base, 'micro'), [base]);
-  const cidades = useMemo(() => opcoes(base.filter((c) => !micro || c.micro === micro), 'cidade'), [base, micro]);
-  const bairros = useMemo(() => opcoes(base.filter((c) => (!micro || c.micro === micro) && (!cidade || c.cidade === cidade)), 'bairro'), [base, micro, cidade]);
+  const micros = useMemo(() => contar(base, (c) => c.micro, (c) => titulo(c.micro)), [base]);
+  const cidades = useMemo(() => contar(base.filter((c) => passaLugar(c, f, 'micro')), (c) => c.cidade, (c) => titulo(c.cidade)), [base, f]);
+  const bairros = useMemo(() => {
+    const lista = base.filter((c) => passaLugar(c, f, 'cidade'));
+    const variasCidades = new Set(lista.map((c) => c.cidade)).size > 1;
+    return contar(lista, chaveBairro, (c) => (variasCidades ? `${titulo(c.bairro)} · ${titulo(c.cidade)}` : titulo(c.bairro)));
+  }, [base, f]);
 
   const contagem = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const c of base) if ((!micro || c.micro === micro) && (!cidade || c.cidade === cidade)) {
-      const n = prio.get(c.codigo)!.nivel; m[n] = (m[n] ?? 0) + 1;
-    }
+    for (const c of base) if (passaLugar(c, f)) { const n = prio.get(c.codigo)!.nivel; m[n] = (m[n] ?? 0) + 1; }
     return m;
-  }, [base, prio, micro, cidade]);
+  }, [base, prio, f]);
 
   const lista = useMemo(() => {
-    const q = normalizar(busca);
-    const r = base.filter((c) => {
-      if (soSelecionados) return naRota.has(c.codigo); // mostra todos os marcados, ignorando os outros filtros
-      if (micro && c.micro !== micro) return false;
-      if (cidade && c.cidade !== cidade) return false;
-      if (bairro && c.bairro !== bairro) return false;
-      if (nivel !== 'todos' && prio.get(c.codigo)!.nivel !== nivel) return false;
-      if (soFin !== 'todos') {
-        const tem = alertaFinanceiro(c).nivel !== 'ok';
-        if ((soFin === 'com') !== tem) return false;
-      }
-      if (q) {
-        const alvo = normalizar(`${c.fantasia} ${c.razao} ${c.codigo} ${c.grupo} ${c.rede} ${c.bairro} ${c.cidade}`);
-        if (!q.split(' ').every((p) => alvo.includes(p))) return false;
-      }
-      return true;
-    });
+    const r = base.filter((c) => (soSelecionados ? naRota.has(c.codigo) : passaFiltros(c, f, prio.get(c.codigo)!)));
     const porNome = (a: Cliente, b: Cliente) => a.fantasia.localeCompare(b.fantasia);
     r.sort(ordem === 'prioridade' ? (a, b) => prio.get(a.codigo)!.ordem - prio.get(b.codigo)!.ordem || porNome(a, b)
       : ordem === 'cidade' ? (a, b) => a.cidade.localeCompare(b.cidade) || a.bairro.localeCompare(b.bairro) || porNome(a, b)
       : porNome);
     return r;
-  }, [base, busca, micro, cidade, bairro, nivel, soFin, ordem, prio, soSelecionados, naRota]);
+  }, [base, f, ordem, prio, soSelecionados, naRota]);
+
+  const mudar = (p: Partial<Filtros>) => { setSoSelecionados(false); setLimite(80); setF((atual) => podarLugar(base, { ...atual, ...p })); };
+  const alternarEm = <T,>(lista: T[], v: T) => (lista.includes(v) ? lista.filter((x) => x !== v) : [...lista, v]);
+  const qtdFiltros = filtrosAtivos(f);
+  const FIN: { id: FiltroFin; rotulo: string }[] = [
+    { id: 'ok', rotulo: '✅ Sem pendência' }, { id: 'cliente', rotulo: '🔴 Do cliente' }, { id: 'grupo', rotulo: '🟠 Do grupo' }
+  ];
 
   const porCodigo = useMemo(() => new Map(todos.map((c) => [c.codigo, c])), [todos]);
   const selecionados = (rota?.paradas ?? []).map((p) => ({ p, c: porCodigo.get(p.codigo) })).filter((x): x is { p: typeof x.p; c: Cliente } => !!x.c);
@@ -85,31 +78,30 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
   return (
     <div>
       <div className="faixa-plano">Toque em <b>＋</b> para adicionar à rota de <b>{nomeDia(data)}</b> · {naRota.size} na rota</div>
-      <input className="busca" type="search" placeholder="Buscar nome, código, rede, bairro…" value={busca} onChange={(e) => { setBusca(e.target.value); setLimite(80); }} />
+      <input className="busca" type="search" placeholder="Buscar nome, código, rede, bairro…" value={f.busca} onChange={(e) => mudar({ busca: e.target.value })} />
 
       <div className="chips">
         {naRota.size > 0 && (
           <button className={`chip chip-sel ${soSelecionados ? 'ativo' : ''}`} onClick={() => setSoSelecionados(!soSelecionados)}>✓ Só selecionados ({naRota.size})</button>
         )}
-        <button className={`chip ${nivel === 'todos' && !soSelecionados ? 'ativo' : ''}`} onClick={() => { setNivel('todos'); setSoSelecionados(false); }}>Todos</button>
+        <button className={`chip ${!f.niveis.length && !soSelecionados ? 'ativo' : ''}`} onClick={() => mudar({ niveis: [] })}>Todos</button>
         {(Object.keys(NIVEIS) as NivelPrioridade[]).map((n) => (
-          <button key={n} className={`chip ${nivel === n && !soSelecionados ? 'ativo' : ''}`} onClick={() => { setNivel(n); setSoSelecionados(false); }}>
+          <button key={n} className={`chip ${f.niveis.includes(n) && !soSelecionados ? 'ativo' : ''}`} onClick={() => mudar({ niveis: alternarEm(f.niveis, n) })}>
             {NIVEIS[n].emoji} {NIVEIS[n].rotulo} {contagem[n] ? `(${contagem[n]})` : ''}
           </button>
         ))}
       </div>
 
       <div className="filtros">
-        <Escolha rotuloCampo="Microrregião" vazio="Todas" valor={micro} opcoes={micros}
-          aoMudar={(v) => { setMicro(v); setCidade(''); setBairro(''); }} />
-        <Escolha rotuloCampo="Cidade" vazio="Todas" valor={cidade} opcoes={cidades}
-          aoMudar={(v) => { setCidade(v); setBairro(''); }} />
-        <Escolha rotuloCampo="Bairro" vazio="Todos" valor={bairro} opcoes={bairros} aoMudar={setBairro} />
-        <select value={soFin} onChange={(e) => setSoFin(e.target.value as typeof soFin)}>
-          <option value="todos">Financeiro: todos</option>
-          <option value="com">Com alerta financeiro</option>
-          <option value="sem">Sem alerta financeiro</option>
-        </select>
+        <Escolha rotuloCampo="Microrregião" vazio="Todas" valores={f.micros} opcoes={micros} aoMudar={(v) => mudar({ micros: v })} />
+        <Escolha rotuloCampo="Cidade" vazio="Todas" valores={f.cidades} opcoes={cidades} aoMudar={(v) => mudar({ cidades: v })} />
+        <Escolha rotuloCampo="Bairro" vazio="Todos" valores={f.bairros} opcoes={bairros} aoMudar={(v) => mudar({ bairros: v })} />
+        <div className="chips quebra" style={{ gridColumn: "1 / -1" }}>
+          <span className="chips-rotulo">💲 Financeiro:</span>
+          {FIN.map((x) => (
+            <button key={x.id} className={`chip ${f.fin.includes(x.id) ? 'ativo' : ''}`} onClick={() => mudar({ fin: alternarEm(f.fin, x.id) })}>{x.rotulo}</button>
+          ))}
+        </div>
         <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)}>
           <option value="prioridade">Ordenar: prioridade</option>
           <option value="cidade">Ordenar: cidade/bairro</option>
@@ -118,7 +110,10 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
         <label className="check"><input type="checkbox" checked={foraCarteira} onChange={(e) => setForaCarteira(e.target.checked)} /> Mostrar quem saiu da carteira</label>
       </div>
 
-      <div className="contador">{lista.length} cliente(s)</div>
+      <div className="limpar-filtros">
+        <span>{lista.length} cliente(s){qtdFiltros ? ` · ${qtdFiltros} filtro(s)` : ''}</span>
+        {qtdFiltros > 0 && <button className="btn-link" onClick={() => { setF(FILTROS_VAZIOS); setSoSelecionados(false); }}>Limpar filtros</button>}
+      </div>
       <ul className="lista">
         {lista.slice(0, limite).map((c) => (
           <li key={c.codigo} className="item">
