@@ -9,7 +9,7 @@ import RegistroVisita from '../components/RegistroVisita';
 import { alternarNaRota, marcarChegada, moverParada, otimizarRota } from '../lib/acoes';
 import { estimar } from '../lib/rota';
 import { decodificarPolyline, horarios } from '../lib/google';
-import { linksRotaGoogle } from '../lib/navegar';
+import { enderecoParaMapa, linksRotaGoogle } from '../lib/navegar';
 import { hojeISO, nomeDia, titulo } from '../lib/texto';
 import Mapa, { type Marcador } from '../components/Mapa';
 import Saida from '../components/Saida';
@@ -97,7 +97,13 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
     } catch (e) { setErro((e as Error).message); } finally { setOcupado(false); }
   }
 
-  const linksGoogle = linksRotaGoogle(paradas.filter((p) => !p.resultado).map((p) => clientes.get(p.codigo)?.local).filter((l): l is NonNullable<typeof l> => !!l), partida, retornar);
+  // No Google Maps: endereço escrito quando o cliente tem rua; senão a coordenada
+  const destinos = paradas.filter((p) => !p.resultado).map((p) => clientes.get(p.codigo))
+    .filter((c): c is Cliente => !!c?.local).map((c) => enderecoParaMapa(c) ?? c.local!);
+  // Saída: um local salvo vira o endereço dele; "minha localização" fica de fora (o Maps parte de onde o celular está)
+  const salvo = partida && cfg?.locais.find((l) => Math.abs(l.lat - partida.lat) < 1e-5 && Math.abs(l.lng - partida.lng) < 1e-5 && l.endereco);
+  const saidaMapa = partida ? (salvo ? salvo.endereco : partida) : null;
+  const linksGoogle = linksRotaGoogle(destinos, partida?.tipo === 'atual' ? null : saidaMapa, retornar ? saidaMapa : null);
   const transitoMin = calculo ? Math.round((calculo.durS - calculo.semTransitoS) / 60) : 0;
 
   if (!rota || !cfg) return null;
@@ -239,7 +245,7 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
                       {!p.resultado && p.checkinEm && <div className="eta">📍 Chegou {hora(new Date(p.checkinEm))}{p.saidaEm ? ` · saiu ${hora(new Date(p.saidaEm))} · falta registrar` : ''}</div>}
                     </div>
                     <div className="botoes">
-                      {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} compacto />}
+                      {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} endereco={enderecoParaMapa(c)} compacto />}
                       {!p.resultado && !p.checkinEm && data === hojeISO() && (
                         <button className="btn btn-sec btn-peq" onClick={() => marcarChegada(data, p.codigo)}>📍 Cheguei</button>
                       )}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { distanciaKm, estimar, otimizarOrdem } from '../src/lib/rota';
-import { linksRotaGoogle } from '../src/lib/navegar';
+import { enderecoParaMapa, linkGoogleMaps, linksRotaGoogle } from '../src/lib/navegar';
 
 describe('rota', () => {
   it('distância Taubaté → São José dos Campos ~ 40 km em linha reta', () => {
@@ -26,9 +26,24 @@ describe('rota', () => {
 
   it('link do Google divide rotas com mais de 9 paradas intermediárias', () => {
     const pts = Array.from({ length: 15 }, (_, i) => ({ lat: -23, lng: -46 + i * 0.01 }));
-    const links = linksRotaGoogle(pts, { lat: -23.1, lng: -46 }, true);
+    const links = linksRotaGoogle(pts, { lat: -23.1, lng: -46 }, { lat: -23.1, lng: -46 });
     expect(links).toHaveLength(2);
     expect(new URL(links[0]).searchParams.get('waypoints')!.split('|')).toHaveLength(9);
     expect(new URL(links[1]).searchParams.get('destination')).toBe('-23.1,-46');
+  });
+
+  it('no Maps vai o endereço escrito quando o cliente tem rua; sem rua, a coordenada', () => {
+    const base = { bairro: 'CENTRO', cidade: 'TAUBATE', uf: 'SP', cep: '12020000' };
+    const comRua = { ...base, endereco: { logradouro: 'Rua Duque de Caxias', numero: '120', complemento: '', bairro: '', cidade: '', uf: '', cep: '' } };
+    expect(enderecoParaMapa(comRua)).toBe('Rua Duque de Caxias, 120, Centro, Taubate - SP, 12020-000');
+    expect(enderecoParaMapa({ ...base, endereco: null })).toBeNull();
+    expect(enderecoParaMapa({ ...base, endereco: { ...comRua.endereco, logradouro: ' ' } })).toBeNull();
+
+    const links = linksRotaGoogle([enderecoParaMapa(comRua)!, { lat: -23.2, lng: -45.9 }], null, 'Rua da Casa, 1, Taubate - SP');
+    const u = new URL(links[0]).searchParams;
+    expect(u.get('origin')).toBeNull(); // parte de onde o celular está
+    expect(u.get('waypoints')).toBe('Rua Duque de Caxias, 120, Centro, Taubate - SP, 12020-000|-23.2,-45.9');
+    expect(u.get('destination')).toBe('Rua da Casa, 1, Taubate - SP');
+    expect(new URL(linkGoogleMaps({ lat: 1, lng: 2 }, 'Rua X, 1')).searchParams.get('destination')).toBe('Rua X, 1');
   });
 });

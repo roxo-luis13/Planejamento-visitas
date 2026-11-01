@@ -11,6 +11,7 @@ import { alternarNaRota, confirmarLocal, obterGps, refazerSugestao, salvarEndere
 import Mapa from '../components/Mapa';
 import Folha from '../components/Folha';
 import BotaoNavegar from '../components/Navegar';
+import { enderecoParaMapa } from '../lib/navegar';
 import { PRECISOES, SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
 
 export default function ClienteTela({ codigo, data, voltar }: { codigo: string; data: string; voltar: () => void }) {
@@ -96,7 +97,7 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
           </div>
         ) : (
           <div className="botoes">
-            {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} compacto />}
+            {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} endereco={enderecoParaMapa(c)} compacto />}
             <button className="btn btn-sec btn-peq" onClick={usarGps}>📍 Estou na loja</button>
             <button className="btn btn-sec btn-peq" onClick={() => setAjustando(c.local ? { lat: c.local.lat, lng: c.local.lng } : { lat: -23.55, lng: -46.63 })}>✥ Ajustar no mapa</button>
             <button className="btn btn-sec btn-peq" onClick={() => setEditando(true)}>✏️ Corrigir endereço</button>
