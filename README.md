@@ -40,7 +40,7 @@ npm run build     # gera a pasta dist/ para publicar
 Tecnologia: React + Vite + vite-plugin-pwa · IndexedDB (Dexie): os dados ficam no aparelho · SheetJS (leitura do .xls) · Leaflet + OpenStreetMap (mapa).
 
 ## Publicar
-Qualquer hospedagem estática com HTTPS serve (Vercel, Netlify, GitHub Pages). Na Vercel: importar o repositório, build `npm run build`, pasta `dist`.
+O app é publicado no GitHub Pages (veja abaixo). Qualquer outra hospedagem estática com HTTPS também serve (build `npm run build`, pasta `dist`).
 
 > As planilhas (`*.xls`, `*.xlsx`) estão no `.gitignore` porque têm dados reais de clientes.
 
@@ -50,3 +50,7 @@ Qualquer hospedagem estática com HTTPS serve (Vercel, Netlify, GitHub Pages). N
 - Janelas de horário dos clientes e previsão de chegada por parada
 - Telefone e contato, quando a exportação passar a trazer
 - Refinar as opções de resultado da visita
+
+### Publicação automática
+Cada envio para o ramo `main` roda os testes e publica no GitHub Pages
+(`.github/workflows/publicar.yml`). Endereço: https://roxo-luis13.github.io/Planejamento-visitas/
