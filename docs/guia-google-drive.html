@@ -102,7 +102,7 @@
       App Visitas
     </div>
     <h1>Como guardar seus dados no Google Drive</h1>
-    <p>Leva 1 minuto e é feito uma vez só. Depois disso, tudo o que você faz no app fica salvo na sua conta Google.</p>
+    <p>Leva 1 minuto e é feito uma vez só. Depois disso, tudo o que você faz no app fica salvo na sua conta Google. Mais abaixo: <a href="#t-agenda" style="color:var(--azul)">lembretes de retorno</a> e <a href="#t-gps" style="color:var(--azul)">chegada automática pelo GPS</a>.</p>
   </header>
 
   <section class="cartao" aria-labelledby="t-por-que">
@@ -195,11 +195,85 @@
     </ul>
   </section>
 
+  <section aria-labelledby="t-agenda">
+    <h2 id="t-agenda" style="margin-left:4px">Lembretes de retorno na Agenda</h2>
+    <p style="margin:0 4px 12px;color:var(--sub)">Quando você combina um retorno numa visita, o app coloca na sua <b style="color:var(--texto)">Agenda Google</b> e o iPhone avisa <b style="color:var(--texto)">2 dias antes</b> e <b style="color:var(--texto)">no dia, às 08:00</b>. Faça depois de conectar o Google Drive.</p>
+    <ol class="passos">
+      <li>
+        <div>
+          <p class="passo-titulo">Ative no app</p>
+          <p class="passo-texto">Em <b>Ajustes</b>, no cartão <b>📅 Lembretes de retorno</b>, toque em <b>Ativar lembretes na Agenda</b>.</p>
+          <div class="tela" aria-hidden="true"><small>O botão é assim</small><span class="botao">Ativar lembretes na Agenda</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Permita o acesso à agenda</p>
+          <p class="passo-texto">Abre a página do Google. Se aparecer uma caixinha para a agenda, <b>deixe marcada</b> e toque em <b>Continuar</b>. O app só mexe nos eventos de retorno que ele mesmo cria.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Confira que ligou</p>
+          <p class="passo-texto">De volta ao app, o cartão mostra <b>“✓ Ligado”</b>.</p>
+          <div class="tela" aria-hidden="true"><small>No cartão de lembretes</small><span class="pilula ok">✓ Ligado</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Deixe o iPhone avisar</p>
+          <p class="passo-texto">Instale o app <b>Google Agenda</b> e permita as notificações. Outra opção: em <b>Ajustes do iPhone → Calendário → Contas</b>, adicione sua conta Google com <b>Calendários</b> ligado.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">No dia a dia</p>
+          <p class="passo-texto">Ao registrar a visita, escolha a data em <b>Próximo retorno</b>. Em até 1 minuto aparece na agenda <b>“📅 Retorno: nome da loja”</b>, com endereço e com quem falar. Se você mudar a data ou visitar antes, a agenda se corrige sozinha.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="t-gps">
+    <h2 id="t-gps" style="margin-left:4px">Chegada automática pelo GPS</h2>
+    <p style="margin:0 4px 12px;color:var(--sub)">O app marca sozinho quando você chega na loja e, quando sai, pergunta se quer registrar a visita.</p>
+    <ol class="passos">
+      <li>
+        <div>
+          <p class="passo-titulo">Ative na Rota</p>
+          <p class="passo-texto">Na aba <b>Rota</b>, no dia de hoje, toque em <b>Ativar</b> no cartão <b>📍 Detectar chegada pelo GPS</b>. Permita a localização (<b>“Ao Usar o App”</b>) e as notificações.</p>
+          <div class="tela" aria-hidden="true"><small>Na aba Rota</small><span>📍 Detectar chegada pelo GPS</span><span class="botao">Ativar</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Chegou na loja</p>
+          <p class="passo-texto">Depois de <b>1 minuto</b> perto do cliente, o app marca <b>“Cheguei”</b> com o horário.</p>
+          <div class="tela" aria-hidden="true"><small>Aviso na tela</small><span>📍 Chegada na Ótica X marcada às 10:42.</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Saiu da loja</p>
+          <p class="passo-texto">Ao se afastar, aparece <b>“Saiu da Ótica X. Registrar a visita?”</b>. Toque em <b>Registrar visita</b> ou em <b>Depois</b>. A duração da visita fica certa mesmo registrando mais tarde.</p>
+          <div class="tela" aria-hidden="true"><small>Aviso na tela</small><span>👋 Saiu da Ótica X.</span><span class="botao">✔️ Registrar visita</span></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <div class="aviso">
+    <b>Importante: o GPS só funciona com o app aberto na tela.</b>
+    O iPhone pausa o app quando ele fica em segundo plano ou com a tela bloqueada. Se você abrir o app já na loja, ele pergunta <b>“Você está na Ótica X?”</b>. Se esquecer de registrar, a Rota mostra um aviso ⏰. Só funciona com clientes que têm o endereço confirmado.
+  </div>
+
   <section class="cartao" aria-labelledby="t-problemas">
     <h2 id="t-problemas">Se der algum problema</h2>
     <div class="problemas">
       <div class="problema"><b>“Acesso bloqueado” ou “não concluiu a verificação”</b><p>Seu e-mail ainda não foi liberado. Avise o Luis e diga qual Gmail usou.</p></div>
       <div class="problema"><b>Abriu o Google e não voltou para o app</b><p>Feche tudo e abra o app de novo pelo ícone. Se continuar, avise o Luis.</p></div>
+      <div class="problema"><b>Lembretes: “A Google Calendar API não está ativada” ou “Sem permissão para a Agenda”</b><p>Toque em <b>Ativar lembretes na Agenda</b> de novo e deixe a agenda marcada. Se continuar, mande um print para o Luis.</p></div>
+      <div class="problema"><b>O app não marca a chegada</b><p>Confira se o app está aberto na tela e se a localização está permitida (Ajustes do iPhone → Privacidade → Serviços de Localização). Na loja, toque em <b>📍 Estou na loja</b> na ficha do cliente para gravar o ponto certo.</p></div>
       <div class="problema"><b>Apareceu “Erro 400”</b><p>Tire um print da tela e mande para o Luis.</p></div>
     </div>
   </section>
