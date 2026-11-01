@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { atualizarCliente, db } from '../db';
 import type { Cliente, Endereco } from '../types';
 import { RESULTADOS } from '../types';
 import { alertaFinanceiro, calcularPrioridade, NIVEIS } from '../lib/prioridade';
@@ -14,12 +14,14 @@ import { PRECISOES, SeloFinanceiro, SeloLocal, SeloPrioridade } from '../compone
 export default function ClienteTela({ codigo, data, voltar }: { codigo: string; data: string; voltar: () => void }) {
   const c = useLiveQuery(() => db.clientes.get(codigo), [codigo]);
   const rota = useLiveQuery(() => db.rotas.get(data), [data]);
-  const visitas = useLiveQuery(() => db.visitas.where('codigo').equals(codigo).reverse().sortBy('data'), [codigo]) ?? [];
+  const visitas = (useLiveQuery(() => db.historico.where('codigo').equals(codigo).reverse().sortBy('data'), [codigo]) ?? []).filter((v) => !v.removido);
   const [ajustando, setAjustando] = useState<{ lat: number; lng: number } | null>(null);
   const [editando, setEditando] = useState(false);
   const [msg, setMsg] = useState('');
   const [notas, setNotas] = useState('');
-  useEffect(() => { if (c) setNotas(c.notas); }, [c?.codigo]); // eslint-disable-line
+  const campoNotas = useRef<HTMLTextAreaElement>(null);
+  // Atualiza a anotação se ela mudar (ex: veio do Drive), a não ser que esteja sendo digitada agora
+  useEffect(() => { if (c && document.activeElement !== campoNotas.current) setNotas(c.notas); }, [c?.codigo, c?.notas]); // eslint-disable-line
 
   const marcadores = useMemo(() => (c?.local && !ajustando
     ? [{ id: c.codigo, lat: c.local.lat, lng: c.local.lng, rotulo: '★', cor: PRECISOES[c.local.precisao].cor, aproximado: PRECISOES[c.local.precisao].alerta }]
@@ -150,8 +152,8 @@ export default function ClienteTela({ codigo, data, voltar }: { codigo: string; 
       {/* ---------- Notas e histórico ---------- */}
       <section className="cartao">
         <h2>Anotações</h2>
-        <textarea rows={3} value={notas} placeholder="Ex: falar com a Maria, atende só de manhã…" onChange={(ev) => setNotas(ev.target.value)}
-          onBlur={() => db.clientes.update(c.codigo, { notas })} />
+        <textarea ref={campoNotas} rows={3} value={notas} placeholder="Ex: falar com a Maria, atende só de manhã…" onChange={(ev) => setNotas(ev.target.value)}
+          onBlur={() => notas !== c.notas && atualizarCliente(c.codigo, { notas })} />
         <h2>Histórico de visitas</h2>
         {!visitas.length ? <p className="nota-peq">Nenhuma visita registrada no app.</p> : (
           <ul className="historico">

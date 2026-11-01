@@ -72,7 +72,7 @@ describe('otimizarRota com Google', () => {
   });
 
   beforeEach(async () => {
-    await Promise.all([db.clientes.clear(), db.rotas.clear(), db.config.clear(), db.visitas.clear()]);
+    await Promise.all([db.clientes.clear(), db.rotas.clear(), db.config.clear(), db.historico.clear()]);
     await db.clientes.bulkPut([cli('A', -23.1), cli('B', -23.2), cli('C', -23.3)]);
   });
 

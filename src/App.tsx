@@ -5,6 +5,7 @@ import ClienteTela from './screens/ClienteTela';
 import Ajustes from './screens/Ajustes';
 import { hojeISO } from './lib/texto';
 import { iniciarFila } from './lib/filaGeo';
+import { entrar, ouvirDrive, type EstadoDrive } from './lib/drive';
 
 type Aba = 'hoje' | 'carteira' | 'ajustes';
 
@@ -15,6 +16,8 @@ export default function App() {
   const [aba, setAba] = useState<Aba>('hoje');
   const [data, setData] = useState(hojeISO());
   const [cliente, setCliente] = useState<string | null>(null);
+  const [drive, setDrive] = useState<EstadoDrive | null>(null);
+  useEffect(() => ouvirDrive(setDrive), []);
   const [dicaInstalar, setDicaInstalar] = useState(ehIOS && !instalado && !localStorage.getItem('dica-instalar-fechada'));
 
   useEffect(() => {
@@ -43,7 +46,19 @@ export default function App() {
 
   return (
     <div className="app">
-      {!cliente && <header className="cabecalho"><h1>{titulos[aba]}</h1></header>}
+      {!cliente && (
+        <header className="cabecalho">
+          <h1>{titulos[aba]}</h1>
+          {drive?.email && (
+            <button className={`nuvem ${drive.situacao}`} title="Google Drive" onClick={() => irPara('ajustes')}>
+              ☁️{drive.situacao === 'ok' ? '✓' : drive.situacao === 'sincronizando' ? '↻' : drive.situacao === 'offline' ? '⏸' : '!'}
+            </button>
+          )}
+        </header>
+      )}
+      {drive?.situacao === 'expirado' && (
+        <button className="faixa-drive" onClick={() => entrar(true)}>☁️ Toque para reconectar ao Google Drive e salvar suas alterações</button>
+      )}
       {dicaInstalar && (
         <div className="dica-instalar">
           <span>Para usar como app: toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>. Assim seus dados ficam guardados.</span>

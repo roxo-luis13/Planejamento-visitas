@@ -26,6 +26,27 @@ trânsito, horário de chegada em cada cliente e fim previsto. "Atualizar trâns
 Com visitas já registradas, o cálculo parte da última visita, no horário atual. Sem chave, o app usa uma estimativa em linha reta.
 A chave fica guardada só no aparelho (nunca no repositório); restrinja-a ao site do app e às APIs Routes e Places (New).
 
+### Google Drive: dados na conta do Alexandre
+Em **Ajustes → Entrar com Google**, os dados (clientes, endereços confirmados, anotações, rotas, visitas, locais de saída
+e configurações) passam a ser guardados no **Google Drive** dele, no arquivo `App Visitas/visitas-dados.json`.
+Em outro aparelho, basta entrar com a mesma conta.
+- O app continua funcionando sem internet; as alterações vão para o Drive sozinhas alguns segundos depois.
+- Ao abrir, o app junta o que está no aparelho com o que está no Drive: **vence a alteração mais recente de cada registro**
+  (no cliente, os dados da planilha e os do Alexandre — endereço, localização, anotações — são juntados separadamente).
+- Permissão `drive.file`: o app só enxerga os arquivos que ele mesmo criou.
+- O Google pede para renovar o acesso a cada ~1 hora; o app tenta renovar sozinho ao abrir e, se precisar, mostra "Toque para reconectar".
+
+#### Ativar o login com Google (feito uma vez)
+No Google Cloud (mesmo projeto do Maps):
+1. *APIs e serviços → Biblioteca*: ative a **Google Drive API**.
+2. *Tela de permissão OAuth*: tipo **Externo**, nome do app, e-mail de suporte; escopos `drive.file`, `openid`, `email`.
+   Enquanto estiver em "Teste", adicione o e-mail do Alexandre em **Usuários de teste** (ou publique o app).
+3. *Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web*:
+   - **Origens JavaScript autorizadas**: `https://roxo-luis13.github.io`
+   - **URIs de redirecionamento autorizados**: `https://roxo-luis13.github.io/Planejamento-visitas/`
+4. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) para `ID_CLIENTE` em `src/config.ts`.
+   Esse ID não é secreto.
+
 ### Endereços (a planilha não traz rua nem número)
 O app sugere um local automaticamente, nesta ordem: loja pelo nome (Google, se houver chave; senão OpenStreetMap) → rua pelo CEP (ViaCEP, só para CEP que não seja o geral da cidade) → centro do bairro → centro da cidade.
 Toda sugestão aparece com ⚠️ até o Alexandre **confirmar** ("Estou na loja", "Ajustar no mapa" ou "Corrigir endereço").

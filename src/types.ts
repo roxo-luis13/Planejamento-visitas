@@ -60,6 +60,9 @@ export interface Cliente extends DadosPlanilha {
   geoStatus: GeoStatus;
   avisoCep: string | null;      // ex: CEP mudou na planilha depois de confirmado
   notas: string;
+  // ---- Sincronização (Drive): quando cada parte foi alterada (ms) ----
+  _emPlanilha?: number;         // dados da planilha / ativo
+  _emUsuario?: number;          // endereço, localização, notas
 }
 
 export type Resultado = 'pedido' | 'sem_pedido' | 'fechado' | 'ausente' | 'reagendar';
@@ -108,18 +111,24 @@ export interface Rota {
   otimizadaEm: string | null;
   horaSaida?: string;         // "08:00"
   calculo?: CalculoRota | null;
+  _em?: number;               // última alteração (sincronização)
 }
 
 export interface LocalSalvo { id: string; nome: string; lat: number; lng: number; endereco: string }
 
+/** Histórico de visitas: um registro por cliente por dia (id = "CODIGO|AAAA-MM-DD"). */
 export interface Visita {
-  id?: number;
+  id: string;
   codigo: string;
   data: string;
   resultado: Resultado;
   nota: string;
   em: string;
+  removido?: boolean;         // visita desfeita (mantida para a sincronização saber)
+  _em?: number;
 }
+
+export interface LinhaConfig { chave: string; valor: unknown; _em?: number }
 
 export interface ResumoImportacao {
   arquivo: string;

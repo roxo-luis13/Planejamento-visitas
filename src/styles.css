@@ -215,3 +215,18 @@ code { background: #eef1f5; padding: 1px 4px; border-radius: 4px; font-size: 12p
 /* fechado e com etiquetas: o campo de digitar não ocupa uma linha inteira */
 .escolha.com-valor:not(.aberta) .escolha-campo input { min-width: 8px; flex: 1 1 8px; padding: 6px 0; }
 .chips.quebra { flex-wrap: wrap; overflow: visible; }
+
+/* Google Drive */
+.cabecalho { display: flex; align-items: center; justify-content: space-between; }
+.nuvem { border: 0; background: #e8f0fb; border-radius: 16px; padding: 6px 10px; font-size: 15px; color: var(--azul); }
+.nuvem.expirado, .nuvem.erro { background: #fdecea; color: #d93025; }
+.faixa-drive { display: block; width: 100%; border: 0; background: #fff4e5; color: #6b4000; padding: 10px 16px; font-size: 14px; text-align: left; border-bottom: 1px solid #ffd59e; }
+.btn-google { background: #fff; color: #1f1f1f; border: 1px solid #dadce0; gap: 10px; }
+.btn-google .g { font-weight: 700; color: #4285f4; font-size: 18px; }
+.drive-conta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.drive-conta small { display: block; color: var(--sub); font-size: 12px; }
+.drive-conta b { word-break: break-all; }
+.drive-status { flex: none; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 14px; background: #e6f4ea; color: #0d652d; }
+.drive-status.sincronizando { background: #e8f0fb; color: var(--azul); }
+.drive-status.offline { background: #f1f3f4; color: var(--sub); }
+.drive-status.expirado, .drive-status.erro { background: #fdecea; color: #d93025; }

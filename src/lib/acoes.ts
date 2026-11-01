@@ -1,5 +1,5 @@
-import { db, lerConfig, obterRota, salvarConfig } from '../db';
-import type { Cliente, Endereco, LocalSalvo, Partida, Resultado, Rota } from '../types';
+import { atualizarCliente, db, lerConfig, obterRota, salvarConfig } from '../db';
+import type { Cliente, Endereco, LocalSalvo, Partida, Resultado, Rota, Visita } from '../types';
 import { mesclar } from './mesclar';
 import { otimizarOrdem } from './rota';
 import { rotaGoogle } from './google';
@@ -23,7 +23,7 @@ export async function importarArquivo(arquivo: File) {
 }
 
 // ---------- Rota ----------
-async function salvarRota(r: Rota) { await db.rotas.put(r); }
+async function salvarRota(r: Rota) { await db.rotas.put({ ...r, _em: Date.now() }); }
 
 /** Qualquer mudança de paradas/saída invalida o cálculo do Google. */
 function invalidar(r: Rota) { r.otimizadaEm = null; r.calculo = null; }
@@ -151,10 +151,13 @@ export async function registrarResultado(data: string, codigo: string, resultado
   p.resultado = resultado;
   p.nota = nota;
   p.checkinEm = resultado ? p.checkinEm ?? agora : null;
-  await db.transaction('rw', db.rotas, db.visitas, async () => {
+  await db.transaction('rw', db.rotas, db.historico, async () => {
     await salvarRota(r);
-    await db.visitas.where({ codigo, data }).delete();
-    if (resultado) await db.visitas.add({ codigo, data, resultado, nota, em: agora });
+    const id = `${codigo}|${data}`;
+    // desfazer não apaga: marca como removido para os outros aparelhos saberem
+    await db.historico.put(resultado
+      ? { id, codigo, data, resultado, nota, em: agora, _em: Date.now() }
+      : { ...((await db.historico.get(id)) ?? { id, codigo, data, resultado: 'sem_pedido' as const, nota: '', em: agora }), removido: true, _em: Date.now() });
   });
   if (resultado === 'reagendar' && reagendarPara) {
     const outra = await obterRota(reagendarPara);
@@ -168,7 +171,7 @@ export async function registrarResultado(data: string, codigo: string, resultado
 
 // ---------- Localização do cliente ----------
 export async function confirmarLocal(codigo: string, lat: number, lng: number, fonte: string) {
-  await db.clientes.update(codigo, {
+  await atualizarCliente(codigo, {
     local: { lat, lng, precisao: 'confirmado', fonte, atualizadoEm: new Date().toISOString() },
     geoStatus: 'ok', avisoCep: null
   });
@@ -177,7 +180,7 @@ export async function confirmarLocal(codigo: string, lat: number, lng: number, f
 export async function salvarEndereco(c: Cliente, e: Endereco): Promise<boolean> {
   const p = await localizarEndereco(e);
   const manterGps = c.local?.precisao === 'confirmado';
-  await db.clientes.update(c.codigo, {
+  await atualizarCliente(c.codigo, {
     endereco: e,
     avisoCep: null,
     ...(p && !manterGps
@@ -188,7 +191,7 @@ export async function salvarEndereco(c: Cliente, e: Endereco): Promise<boolean> 
 }
 
 export async function refazerSugestao(codigo: string) {
-  await db.clientes.update(codigo, { local: null, endereco: null, geoStatus: 'pendente', avisoCep: null });
+  await atualizarCliente(codigo, { local: null, endereco: null, geoStatus: 'pendente', avisoCep: null });
   void iniciarFila();
 }
 
@@ -208,7 +211,7 @@ export async function exportarBackup(): Promise<Blob> {
   const dados = {
     app: 'planejamento-visitas', versao: 1, em: new Date().toISOString(),
     clientes: await db.clientes.toArray(), rotas: await db.rotas.toArray(),
-    visitas: await db.visitas.toArray(), config: await db.config.toArray()
+    historico: await db.historico.toArray(), config: await db.config.toArray()
   };
   return new Blob([JSON.stringify(dados)], { type: 'application/json' });
 }
@@ -216,10 +219,16 @@ export async function exportarBackup(): Promise<Blob> {
 export async function restaurarBackup(arquivo: File) {
   const d = JSON.parse(await arquivo.text());
   if (d.app !== 'planejamento-visitas') throw new Error('Este arquivo não é um backup do app.');
-  await db.transaction('rw', [db.clientes, db.rotas, db.visitas, db.config], async () => {
-    await Promise.all([db.clientes.clear(), db.rotas.clear(), db.visitas.clear(), db.config.clear()]);
-    await db.clientes.bulkPut(d.clientes); await db.rotas.bulkPut(d.rotas);
-    await db.visitas.bulkPut(d.visitas); await db.config.bulkPut(d.config);
+  // backups antigos têm "visitas" com id numérico
+  const historico = d.historico ?? (d.visitas ?? []).map((v: Visita) => ({ ...v, id: `${v.codigo}|${v.data}` }));
+  const em = Date.now();
+  await db.transaction('rw', [db.clientes, db.rotas, db.historico, db.config], async () => {
+    await Promise.all([db.clientes.clear(), db.rotas.clear(), db.historico.clear(), db.config.clear()]);
+    // restaurar conta como alteração nova (vence na sincronização)
+    await db.clientes.bulkPut(d.clientes.map((c: Cliente) => ({ ...c, _emPlanilha: em, _emUsuario: em })));
+    await db.rotas.bulkPut(d.rotas.map((r: Rota) => ({ ...r, _em: em })));
+    await db.historico.bulkPut(historico.map((v: Visita) => ({ ...v, _em: em })));
+    await db.config.bulkPut(d.config.map((c: { chave: string; valor: unknown }) => ({ ...c, _em: em })));
   });
 }
 

@@ -1,4 +1,4 @@
-import { db, lerConfig } from '../db';
+import { atualizarCliente, db, lerConfig } from '../db';
 import type { Cliente } from '../types';
 import { sugerirLocal, type Cache } from './geocodificar';
 import { calcularPrioridade } from './prioridade';
@@ -43,7 +43,7 @@ export async function sugerirUm(c: Cliente, googleKey?: string) {
   const atual = await db.clientes.get(c.codigo);
   if (!atual) return;
   if (atual.local && (atual.local.precisao === 'confirmado' || atual.local.precisao === 'informado')) return;
-  await db.clientes.update(c.codigo, s ? { local: s.local, endereco: s.endereco, geoStatus: 'ok' } : { geoStatus: 'falhou' });
+  await atualizarCliente(c.codigo, s ? { local: s.local, endereco: s.endereco, geoStatus: 'ok' } : { geoStatus: 'falhou' });
 }
 
 export async function iniciarFila() {

@@ -7,6 +7,7 @@ import { testarChave } from '../lib/google';
 import { iniciarFila, ouvirFila, pararFila, type EstadoFila } from '../lib/filaGeo';
 import { formatarData } from '../lib/texto';
 import { PRECISOES } from '../components/Selos';
+import CartaoDrive from '../components/CartaoDrive';
 
 export default function Ajustes() {
   const cfg = useLiveQuery(() => lerConfig(), []);
@@ -70,6 +71,8 @@ export default function Ajustes() {
 
   return (
     <div>
+      <CartaoDrive />
+
       <section className="cartao">
         <h2>Planilha de clientes</h2>
         <p className="nota-peq">Envie a planilha exportada (.xls ou .xlsx). O app atualiza os dados da planilha e <b>mantém</b> o que você fez:
@@ -143,8 +146,8 @@ export default function Ajustes() {
       </section>
 
       <section className="cartao">
-        <h2>Backup</h2>
-        <p className="nota-peq">Os dados ficam guardados neste iPhone. Faça um backup de vez em quando (salve em Arquivos ou iCloud Drive).</p>
+        <h2>Backup em arquivo</h2>
+        <p className="nota-peq">Com o Google Drive conectado, o backup é automático. Aqui você também pode salvar uma cópia em arquivo.</p>
         <div className="botoes">
           <button className="btn" onClick={baixarBackup}>💾 Salvar backup</button>
           <button className="btn btn-sec" onClick={() => arqBackup.current?.click()}>Restaurar backup</button>
