@@ -101,6 +101,86 @@ export async function gerarExcel(visitas: Visita[], clientes: Map<string, Client
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Visitas');
   const dados = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
-  const nome = `visitas-${nomePeriodo.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const nome = `visitas-${nomePeriodo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/gi, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`;
   return new File([dados], nome, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+// ---------------- Relatórios na tela ----------------
+export interface Contagem { id: string; rotulo: string; qtd: number; extra?: number }
+export interface ResumoPeriodo {
+  visitas: number;
+  clientesVisitados: number;
+  diasEmCampo: number;
+  pedidos: number;
+  taxaPedido: number | null;          // pedidos / visitas atendidas (exclui "não atendido")
+  pecas: number;
+  valor: number;
+  ticketMedio: number | null;         // valor / pedidos com valor informado
+  minutosMedios: number | null;       // tempo médio na loja (só visitas com chegada e saída)
+  resultados: Contagem[];
+  marcas: Contagem[];                 // qtd = peças, extra = nº de pedidos com a marca
+  motivosSemPedido: Contagem[];
+  motivosNaoAtendido: Contagem[];
+  assuntos: Contagem[];
+  cidades: Contagem[];                // qtd = visitas, extra = pedidos
+}
+
+function contar<T>(itens: T[], chave: (x: T) => string | null | undefined, rotulo: (k: string) => string): Contagem[] {
+  const m = new Map<string, number>();
+  for (const x of itens) { const k = chave(x); if (k) m.set(k, (m.get(k) ?? 0) + 1); }
+  return [...m].map(([id, qtd]) => ({ id, rotulo: rotulo(id), qtd })).sort((a, b) => b.qtd - a.qtd || a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+}
+
+export function resumoPeriodo(todas: Visita[], clientes: Map<string, Cliente>): ResumoPeriodo {
+  const vs = todas.filter((v) => !v.removido);
+  const pedidos = vs.filter((v) => v.resultado === 'pedido');
+  const atendidas = vs.filter((v) => v.resultado !== 'nao_atendido').length;
+  let pecas = 0, valor = 0, comValor = 0;
+  const porMarca = new Map<string, { pecas: number; pedidos: number }>();
+  for (const v of vs) {
+    for (const [m, n] of Object.entries(v.pedido?.pecas ?? {})) {
+      if (!n) continue;
+      pecas += n;
+      const x = porMarca.get(m) ?? { pecas: 0, pedidos: 0 };
+      x.pecas += n; x.pedidos++; porMarca.set(m, x);
+    }
+    if (v.pedido?.valor != null) { valor += v.pedido.valor; comValor++; }
+  }
+  const duracoes = vs.filter((v) => v.chegadaEm && v.saidaEm)
+    .map((v) => (Date.parse(v.saidaEm!) - Date.parse(v.chegadaEm!)) / 60000).filter((d) => d >= 1 && d < 600);
+  const cidades = contar(vs, (v) => clientes.get(v.codigo)?.cidade, titulo)
+    .map((c) => ({ ...c, extra: pedidos.filter((v) => clientes.get(v.codigo)?.cidade === c.id).length }));
+  return {
+    visitas: vs.length,
+    clientesVisitados: new Set(vs.map((v) => v.codigo)).size,
+    diasEmCampo: new Set(vs.map((v) => v.data)).size,
+    pedidos: pedidos.length,
+    taxaPedido: atendidas ? pedidos.length / atendidas : null,
+    pecas, valor,
+    ticketMedio: comValor ? valor / comValor : null,
+    minutosMedios: duracoes.length ? Math.round(duracoes.reduce((a, b) => a + b, 0) / duracoes.length) : null,
+    resultados: contar(vs, (v) => v.resultado, (k) => rotuloResultado(k as Visita['resultado']).rotulo),
+    marcas: marcasDasVisitas(vs).filter((m) => porMarca.has(m))
+      .map((m) => ({ id: m, rotulo: titulo(m), qtd: porMarca.get(m)!.pecas, extra: porMarca.get(m)!.pedidos }))
+      .sort((a, b) => b.qtd - a.qtd),
+    motivosSemPedido: contar(vs.filter((v) => v.resultado === 'sem_pedido'), (v) => v.motivo, (k) => MOTIVOS_SEM_PEDIDO.find((m) => m.id === k)?.rotulo ?? k),
+    motivosNaoAtendido: contar(vs.filter((v) => v.resultado === 'nao_atendido'), (v) => v.motivo, (k) => MOTIVOS_NAO_ATENDIDO.find((m) => m.id === k)?.rotulo ?? k),
+    assuntos: contar(vs.flatMap((v) => v.assuntos ?? []), (a) => a, (k) => ASSUNTOS.find((x) => x.id === k)?.rotulo ?? k),
+    cidades
+  };
+}
+
+export interface RetornoPendente { codigo: string; retorno: string; combinadoEm: string }
+
+/** Retornos combinados que ainda não aconteceram: a última visita do cliente marcou um retorno e não houve visita depois. */
+export function retornosPendentes(todas: Visita[]): RetornoPendente[] {
+  const ultima = new Map<string, Visita>();
+  for (const v of todas) {
+    if (v.removido) continue;
+    const u = ultima.get(v.codigo);
+    if (!u || v.data > u.data) ultima.set(v.codigo, v);
+  }
+  return [...ultima.values()].filter((v) => v.retorno && v.retorno > v.data)
+    .map((v) => ({ codigo: v.codigo, retorno: v.retorno!, combinadoEm: v.data }))
+    .sort((a, b) => a.retorno.localeCompare(b.retorno));
 }

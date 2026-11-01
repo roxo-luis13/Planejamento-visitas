@@ -139,7 +139,7 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
             )}
             {!temGoogle && (
               <div className="alerta">
-                Para calcular a rota <b>pelas ruas com o trânsito do momento</b>, cadastre a chave do Google.
+                Para calcular a rota <b>pelas ruas com o trânsito do momento</b>, cadastre a chave do Google (Ajustes → Avançado).
                 <button className="btn btn-sec btn-peq" style={{ marginTop: 8 }} onClick={irAjustes}>Configurar Google</button>
               </div>
             )}

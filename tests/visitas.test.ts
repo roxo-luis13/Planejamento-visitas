@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { intervalo, linhasRelatorio, resumoVisita } from '../src/lib/relatorio';
+import { intervalo, linhasRelatorio, resumoPeriodo, resumoVisita, retornosPendentes } from '../src/lib/relatorio';
 import { lerValor } from '../src/components/RegistroVisita';
 import { db, obterRota } from '../src/db';
 import { alternarNaRota, registrarVisita } from '../src/lib/acoes';
@@ -72,5 +72,34 @@ describe('registrar visita', () => {
     const r = await obterRota('2030-02-01');
     expect(r.paradas).toHaveLength(1);
     expect(r.paradas[0].resultado).toBe('sem_pedido');
+  });
+});
+
+describe('relatórios na tela', () => {
+  const base = { nota: '', em: '' };
+  const vs: Visita[] = [
+    { ...base, id: 'A|2026-10-01', codigo: 'A', data: '2026-10-01', resultado: 'pedido', pedido: { pecas: { MORMAII: 10, COLCCI: 5 }, valor: 1000, numero: '' },
+      chegadaEm: '2026-10-01T13:00:00Z', saidaEm: '2026-10-01T13:30:00Z', assuntos: ['colecao'], retorno: '2026-11-15' },
+    { ...base, id: 'B|2026-10-01', codigo: 'B', data: '2026-10-01', resultado: 'sem_pedido', motivo: 'estoque_alto', assuntos: ['colecao', 'troca'], retorno: '2026-10-20' },
+    { ...base, id: 'C|2026-10-02', codigo: 'C', data: '2026-10-02', resultado: 'nao_atendido', motivo: 'fechado', retorno: '2026-10-10' },
+    { ...base, id: 'C|2026-10-12', codigo: 'C', data: '2026-10-12', resultado: 'pedido', pedido: { pecas: { MORMAII: 4 }, valor: null, numero: '' } },
+    { ...base, id: 'D|2026-10-03', codigo: 'D', data: '2026-10-03', resultado: 'pedido', removido: true, pedido: { pecas: { YOUY: 99 }, valor: 9999, numero: '' } }
+  ];
+  const clientes = new Map(['A', 'B', 'C'].map((c) => [c, { ...cli(c), cidade: c === 'C' ? 'JACAREI' : 'TAUBATE' }]));
+
+  it('soma números, marcas, motivos e cidades ignorando removidos', () => {
+    const r = resumoPeriodo(vs, clientes);
+    expect(r).toMatchObject({ visitas: 4, clientesVisitados: 3, diasEmCampo: 3, pedidos: 2, pecas: 19, valor: 1000, ticketMedio: 1000, minutosMedios: 30 });
+    expect(r.taxaPedido).toBeCloseTo(2 / 3);
+    expect(r.marcas.map((m) => [m.id, m.qtd, m.extra])).toEqual([['MORMAII', 14, 2], ['COLCCI', 5, 1]]);
+    expect(r.motivosSemPedido).toEqual([{ id: 'estoque_alto', rotulo: 'Estoque alto', qtd: 1 }]);
+    expect(r.motivosNaoAtendido[0].id).toBe('fechado');
+    expect(r.assuntos[0]).toMatchObject({ id: 'colecao', qtd: 2 });
+    expect(r.cidades.map((c) => [c.rotulo, c.qtd, c.extra])).toEqual([['Jacarei', 2, 1], ['Taubate', 2, 1]]);
+    expect(r.resultados[0]).toMatchObject({ id: 'pedido', qtd: 2 });
+  });
+
+  it('retorno pendente só vale se não houve visita depois', () => {
+    expect(retornosPendentes(vs).map((x) => [x.codigo, x.retorno])).toEqual([['B', '2026-10-20'], ['A', '2026-11-15']]);
   });
 });

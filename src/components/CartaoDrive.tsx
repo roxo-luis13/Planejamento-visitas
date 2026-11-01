@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { driveConfigurado, entrar, ouvirDrive, sair, sincronizar, type EstadoDrive } from '../lib/drive';
+import { driveConfigurado, entrar, ouvirDrive, sair, sincronizarAgora, type EstadoDrive } from '../lib/drive';
 
 const hora = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
 
@@ -33,14 +33,15 @@ export default function CartaoDrive() {
               {e.situacao === 'erro' && '! Erro'}
             </span>
           </div>
-          <p className="nota-peq">Última sincronização: {hora(e.ultima)}. As alterações vão para o Drive sozinhas, alguns segundos depois.</p>
+          <p className="nota-peq">Última sincronização: {hora(e.ultima)}. O app sincroniza sozinho <b>a cada 2 horas</b>; para enviar na hora, toque em <b>Sincronizar agora</b>.</p>
+          {e.pendente && e.situacao !== 'sincronizando' && <div className="alerta">• Há alterações neste aparelho ainda não enviadas ao Drive.</div>}
           {e.situacao === 'expirado' && (
             <div className="alerta">O acesso ao Drive venceu (o Google pede a cada tempo). Toque para reconectar. Normalmente é automático.
               <button className="btn btn-peq" style={{ marginTop: 8 }} onClick={() => entrar(true)}>Reconectar</button></div>
           )}
           {e.mensagem && <div className="msg">{e.mensagem}</div>}
           <div className="botoes">
-            <button className="btn btn-sec" disabled={e.situacao === 'sincronizando'} onClick={() => sincronizar()}>↻ Sincronizar agora</button>
+            <button className="btn btn-sec" disabled={e.situacao === 'sincronizando'} onClick={() => sincronizarAgora()}>↻ Sincronizar agora</button>
             <button className="btn-link" onClick={() => confirm('Desconectar do Google Drive? Os dados continuam neste aparelho e no seu Drive.') && sair()}>Sair</button>
           </div>
         </>

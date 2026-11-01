@@ -3,11 +3,12 @@ import Hoje from './screens/Hoje';
 import Carteira from './screens/Carteira';
 import ClienteTela from './screens/ClienteTela';
 import Ajustes from './screens/Ajustes';
+import Relatorios from './screens/Relatorios';
 import { hojeISO } from './lib/texto';
 import { iniciarFila } from './lib/filaGeo';
 import { entrar, ouvirDrive, type EstadoDrive } from './lib/drive';
 
-type Aba = 'hoje' | 'carteira' | 'ajustes';
+type Aba = 'hoje' | 'carteira' | 'relatorios' | 'ajustes';
 
 const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const instalado = window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
@@ -42,7 +43,7 @@ export default function App() {
   }
   function irPara(a: Aba) { setCliente(null); setAba(a); window.scrollTo(0, 0); }
 
-  const titulos: Record<Aba, string> = { hoje: 'Rota do dia', carteira: 'Carteira', ajustes: 'Ajustes' };
+  const titulos: Record<Aba, string> = { hoje: 'Rota do dia', carteira: 'Carteira', relatorios: 'Relatórios', ajustes: 'Ajustes' };
 
   return (
     <div className="app">
@@ -51,7 +52,7 @@ export default function App() {
           <h1>{titulos[aba]}</h1>
           {drive?.email && (
             <button className={`nuvem ${drive.situacao}`} title="Google Drive" onClick={() => irPara('ajustes')}>
-              ☁️{drive.situacao === 'ok' ? '✓' : drive.situacao === 'sincronizando' ? '↻' : drive.situacao === 'offline' ? '⏸' : '!'}
+              ☁️{drive.situacao === 'ok' ? (drive.pendente ? '•' : '✓') : drive.situacao === 'sincronizando' ? '↻' : drive.situacao === 'offline' ? '⏸' : '!'}
             </button>
           )}
         </header>
@@ -69,10 +70,11 @@ export default function App() {
         {cliente ? <ClienteTela codigo={cliente} data={data} voltar={fecharCliente} />
           : aba === 'hoje' ? <Hoje data={data} setData={setData} abrirCliente={abrirCliente} irCarteira={() => irPara('carteira')} irAjustes={() => irPara('ajustes')} />
           : aba === 'carteira' ? <Carteira data={data} abrirCliente={abrirCliente} irRota={() => irPara('hoje')} />
+          : aba === 'relatorios' ? <Relatorios abrirCliente={abrirCliente} />
           : <Ajustes />}
       </main>
       <nav className="abas">
-        {([['hoje', '🗺️', 'Rota'], ['carteira', '👥', 'Carteira'], ['ajustes', '⚙️', 'Ajustes']] as const).map(([id, ic, rot]) => (
+        {([['hoje', '🗺️', 'Rota'], ['carteira', '👥', 'Carteira'], ['relatorios', '📊', 'Relatórios'], ['ajustes', '⚙️', 'Ajustes']] as const).map(([id, ic, rot]) => (
           <button key={id} className={aba === id && !cliente ? 'ativa' : ''} onClick={() => irPara(id)}>
             <span className="aba-icone">{ic}</span><span>{rot}</span>
           </button>

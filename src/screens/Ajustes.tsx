@@ -8,7 +8,6 @@ import { iniciarFila, ouvirFila, pararFila, type EstadoFila } from '../lib/filaG
 import { formatarData } from '../lib/texto';
 import { PRECISOES } from '../components/Selos';
 import CartaoDrive from '../components/CartaoDrive';
-import ExportarVisitas from '../components/ExportarVisitas';
 
 export default function Ajustes() {
   const cfg = useLiveQuery(() => lerConfig(), []);
@@ -74,8 +73,6 @@ export default function Ajustes() {
     <div>
       <CartaoDrive />
 
-      <ExportarVisitas />
-
       <section className="cartao">
         <h2>Planilha de clientes</h2>
         <p className="nota-peq">Envie a planilha exportada (.xls ou .xlsx). O app atualiza os dados da planilha e <b>mantém</b> o que você fez:
@@ -93,50 +90,6 @@ export default function Ajustes() {
             {ult.locaisResetados ? ` · ${ult.locaisResetados} endereços sugeridos refeitos (mudou o CEP)` : ''}
           </div>
         )}
-      </section>
-
-      <section className="cartao">
-        <h2>🚦 Google Maps: rotas reais com trânsito</h2>
-        <p className="nota-peq">Com a chave do Google, a rota é calculada <b>pelas ruas e com o trânsito do momento</b>
-          (ou o previsto para o horário de saída), com horário de chegada em cada cliente. A chave também melhora as sugestões de endereço.</p>
-        <input type="password" placeholder="Cole aqui a chave da API Google" value={chave} onChange={(e) => setChave(e.target.value)} autoComplete="off" />
-        <div className="botoes">
-          <button className="btn" disabled={!chave.trim() || testando} onClick={testar}>{testando ? 'Testando…' : 'Salvar e testar'}</button>
-          {cfg.googleKey && <button className="btn btn-sec" onClick={async () => { setChave(''); await salvarConfig({ googleKey: '' }); setMsgChave('Chave removida.'); }}>Remover</button>}
-        </div>
-        {msgChave && <div className={/✓/.test(msgChave) ? 'alerta-ok' : 'msg'}>{msgChave}</div>}
-        <details>
-          <summary>Como criar a chave (uma vez só)</summary>
-          <ol className="nota-peq passos">
-            <li>Entre em <b>console.cloud.google.com</b> com uma conta Google e crie um projeto (ex: "Visitas").</li>
-            <li>Em <b>Faturamento</b>, vincule um cartão. O Google exige, mas tem uma cota mensal gratuita; para uma pessoa só, o uso tende a ficar baixo. Confira os preços atuais na página do Google Maps Platform.</li>
-            <li>Em <b>APIs e serviços → Biblioteca</b>, ative <b>Routes API</b> e <b>Places API (New)</b>.</li>
-            <li>Em <b>APIs e serviços → Credenciais</b>, clique em <b>Criar credenciais → Chave de API</b>.</li>
-            <li>Edite a chave: em <b>Restrições de aplicativo</b> escolha <b>Sites</b> e adicione <code>https://roxo-luis13.github.io/*</code>. Em <b>Restrições de API</b> marque só Routes API e Places API (New).</li>
-            <li>Copie a chave, cole acima e toque em <b>Salvar e testar</b>.</li>
-          </ol>
-          <p className="nota-peq">A chave fica guardada só neste iPhone, não vai para o GitHub.</p>
-        </details>
-      </section>
-
-      <section className="cartao">
-        <h2>Endereços sugeridos</h2>
-        <p className="nota-peq">A planilha não traz rua e número. O app procura uma sugestão (pelo nome da loja, CEP, bairro ou cidade).
-          As sugestões aparecem com ⚠️ até você confirmar na visita.</p>
-        <ul className="lista-precisao">
-          {(Object.keys(PRECISOES) as Precisao[]).map((k) => porPrecisao[k] ? <li key={k}><span style={{ color: PRECISOES[k].cor }}>{PRECISOES[k].curto}</span><b>{porPrecisao[k]}</b></li> : null)}
-          {porPrecisao.pendente ? <li><span>⏳ Aguardando busca</span><b>{porPrecisao.pendente}</b></li> : null}
-          {porPrecisao.falhou ? <li><span>❓ Não encontrados</span><b>{porPrecisao.falhou}</b></li> : null}
-        </ul>
-        {fila?.rodando ? (
-          <>
-            <div className="msg">Buscando… {fila.feitos} feitos, {fila.pendentes} na fila{fila.atual ? ` (${fila.atual})` : ''}. Mantenha o app aberto.</div>
-            <button className="btn btn-sec btn-bloco" onClick={pararFila}>Pausar</button>
-          </>
-        ) : (
-          porPrecisao.pendente ? <button className="btn btn-sec btn-bloco" onClick={() => iniciarFila()}>Buscar endereços pendentes</button> : null
-        )}
-        {fila?.erro && <div className="msg">{fila.erro}</div>}
       </section>
 
       <section className="cartao">
@@ -159,19 +112,65 @@ export default function Ajustes() {
       </section>
       <details className="cartao avancado">
         <summary>Avançado</summary>
-        <h2>Backup em arquivo</h2>
-        <p className="nota-peq">Com o Google Drive conectado, tudo já é salvo sozinho e o Drive guarda versões anteriores.
-          Use isto só se precisar de uma cópia em arquivo (por exemplo, para enviar a alguém) ou para restaurar uma cópia antiga.</p>
-        <div className="botoes">
-          <button className="btn" onClick={baixarBackup}>💾 Salvar backup</button>
-          <button className="btn btn-sec" onClick={() => arqBackup.current?.click()}>Restaurar backup</button>
+        <div className="sub-avancado">
+          <h2>🚦 Google Maps: rotas reais com trânsito</h2>
+          <p className="nota-peq">Com a chave do Google, a rota é calculada <b>pelas ruas e com o trânsito do momento</b>
+            (ou o previsto para o horário de saída), com horário de chegada em cada cliente. A chave também melhora as sugestões de endereço.</p>
+          <input type="password" placeholder="Cole aqui a chave da API Google" value={chave} onChange={(e) => setChave(e.target.value)} autoComplete="off" />
+          <div className="botoes">
+            <button className="btn" disabled={!chave.trim() || testando} onClick={testar}>{testando ? 'Testando…' : 'Salvar e testar'}</button>
+            {cfg.googleKey && <button className="btn btn-sec" onClick={async () => { setChave(''); await salvarConfig({ googleKey: '' }); setMsgChave('Chave removida.'); }}>Remover</button>}
+          </div>
+          {msgChave && <div className={/✓/.test(msgChave) ? 'alerta-ok' : 'msg'}>{msgChave}</div>}
+          <details>
+            <summary>Como criar a chave (uma vez só)</summary>
+            <ol className="nota-peq passos">
+              <li>Entre em <b>console.cloud.google.com</b> com uma conta Google e crie um projeto (ex: "Visitas").</li>
+              <li>Em <b>Faturamento</b>, vincule um cartão. O Google exige, mas tem uma cota mensal gratuita; para uma pessoa só, o uso tende a ficar baixo. Confira os preços atuais na página do Google Maps Platform.</li>
+              <li>Em <b>APIs e serviços → Biblioteca</b>, ative <b>Routes API</b> e <b>Places API (New)</b>.</li>
+              <li>Em <b>APIs e serviços → Credenciais</b>, clique em <b>Criar credenciais → Chave de API</b>.</li>
+              <li>Edite a chave: em <b>Restrições de aplicativo</b> escolha <b>Sites</b> e adicione <code>https://roxo-luis13.github.io/*</code>. Em <b>Restrições de API</b> marque só Routes API e Places API (New).</li>
+              <li>Copie a chave, cole acima e toque em <b>Salvar e testar</b>.</li>
+            </ol>
+            <p className="nota-peq">A chave fica guardada só neste iPhone, não vai para o GitHub.</p>
+          </details>
         </div>
-        <input ref={arqBackup} type="file" accept=".json,application/json" hidden onChange={async (e) => {
-          const f = e.target.files?.[0]; if (!f) return;
-          if (!confirm('Restaurar substitui TODOS os dados atuais pelos do backup. Continuar?')) return;
-          try { await restaurarBackup(f); setMsgBackup('Backup restaurado ✓'); } catch (err) { setMsgBackup('Erro: ' + (err as Error).message); }
-        }} />
-        {msgBackup && <div className="msg">{msgBackup}</div>}
+
+        <div className="sub-avancado">
+          <h2>Endereços sugeridos</h2>
+          <p className="nota-peq">A planilha não traz rua e número. O app procura uma sugestão (pelo nome da loja, CEP, bairro ou cidade).
+            As sugestões aparecem com ⚠️ até você confirmar na visita.</p>
+          <ul className="lista-precisao">
+            {(Object.keys(PRECISOES) as Precisao[]).map((k) => porPrecisao[k] ? <li key={k}><span style={{ color: PRECISOES[k].cor }}>{PRECISOES[k].curto}</span><b>{porPrecisao[k]}</b></li> : null)}
+            {porPrecisao.pendente ? <li><span>⏳ Aguardando busca</span><b>{porPrecisao.pendente}</b></li> : null}
+            {porPrecisao.falhou ? <li><span>❓ Não encontrados</span><b>{porPrecisao.falhou}</b></li> : null}
+          </ul>
+          {fila?.rodando ? (
+            <>
+              <div className="msg">Buscando… {fila.feitos} feitos, {fila.pendentes} na fila{fila.atual ? ` (${fila.atual})` : ''}. Mantenha o app aberto.</div>
+              <button className="btn btn-sec btn-bloco" onClick={pararFila}>Pausar</button>
+            </>
+          ) : (
+            porPrecisao.pendente ? <button className="btn btn-sec btn-bloco" onClick={() => iniciarFila()}>Buscar endereços pendentes</button> : null
+          )}
+          {fila?.erro && <div className="msg">{fila.erro}</div>}
+        </div>
+
+        <div className="sub-avancado">
+          <h2>Backup em arquivo</h2>
+          <p className="nota-peq">Com o Google Drive conectado, tudo já é salvo sozinho e o Drive guarda versões anteriores.
+            Use isto só se precisar de uma cópia em arquivo (por exemplo, para enviar a alguém) ou para restaurar uma cópia antiga.</p>
+          <div className="botoes">
+            <button className="btn" onClick={baixarBackup}>💾 Salvar backup</button>
+            <button className="btn btn-sec" onClick={() => arqBackup.current?.click()}>Restaurar backup</button>
+          </div>
+          <input ref={arqBackup} type="file" accept=".json,application/json" hidden onChange={async (e) => {
+            const f = e.target.files?.[0]; if (!f) return;
+            if (!confirm('Restaurar substitui TODOS os dados atuais pelos do backup. Continuar?')) return;
+            try { await restaurarBackup(f); setMsgBackup('Backup restaurado ✓'); } catch (err) { setMsgBackup('Erro: ' + (err as Error).message); }
+          }} />
+          {msgBackup && <div className="msg">{msgBackup}</div>}
+        </div>
       </details>
 
     </div>

@@ -24,9 +24,13 @@ para visitas fora da rota):
 Motivos e assuntos são **listas fixas**, para poderem ser somados nos relatórios.
 
 ### Relatórios
-- **Ajustes → 📊 Relatório de visitas → Exportar para Excel:** uma linha por visita, com cliente, cidade, microrregião, grupo,
+Aba **📊 Relatórios**, com filtro de período (este mês, mês passado, últimos 30/90 dias, tudo):
+- Números do período: visitas, clientes e dias em campo, pedidos e taxa de pedido (sobre as visitas atendidas), peças,
+  valor e ticket médio, tempo médio na loja e % da carteira visitada.
+- Resultado das visitas, peças por marca, motivos de não comprar / não ser atendido, assuntos e desempenho por cidade.
+- **Retornos combinados** vencidos e dos próximos 14 dias, e **clientes atrasados/perto do ciclo sem visita** no período (toque abre a ficha).
+- **Exportar para Excel:** uma linha por visita, com cliente, cidade, microrregião, grupo,
   resultado, motivo, contato, assuntos, peças por marca, total, valor, nº do pedido, retorno, observação, duração e distância.
-- Tela de relatórios dentro do app: próximo passo.
 
 ### Prioridade de visita
 `ciclo = 365 ÷ FREQ.MEDIA` · `atraso = dias desde o último faturamento − ciclo`
@@ -46,11 +50,11 @@ A chave fica guardada só no aparelho (nunca no repositório); restrinja-a ao si
 Em **Ajustes → Entrar com Google**, os dados (clientes, endereços confirmados, anotações, rotas, visitas, locais de saída
 e configurações) passam a ser guardados no **Google Drive** dele, no arquivo `App Visitas/visitas-dados.json`.
 Em outro aparelho, basta entrar com a mesma conta.
-- O app continua funcionando sem internet; as alterações vão para o Drive sozinhas alguns segundos depois.
+- O app continua funcionando sem internet. A sincronização automática acontece **no máximo a cada 2 horas** (ao abrir o app, ao voltar para ele ou a cada 5 min de uso, se já passou o intervalo); alterações feitas no meio-tempo ficam marcadas como pendentes (☁️•). **Ajustes → Sincronizar agora** envia na hora.
 - Ao abrir, o app junta o que está no aparelho com o que está no Drive: **vence a alteração mais recente de cada registro**
   (no cliente, os dados da planilha e os do Alexandre — endereço, localização, anotações — são juntados separadamente).
 - Permissão `drive.file`: o app só enxerga os arquivos que ele mesmo criou.
-- O Google pede para renovar o acesso a cada ~1 hora; o app tenta renovar sozinho ao abrir e, se precisar, mostra "Toque para reconectar".
+- O Google pede para renovar o acesso a cada ~1 hora; o app tenta renovar sozinho quando a sincronização está vencida e, se precisar, mostra "Toque para reconectar".
 
 #### Ativar o login com Google (feito uma vez)
 No Google Cloud (mesmo projeto do Maps):

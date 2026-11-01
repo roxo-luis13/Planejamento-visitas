@@ -331,3 +331,26 @@ details.avancado[open] > summary { margin-bottom: 8px; }
 .btn-link.perigo { color: var(--vermelho); }
 .historico.rico { list-style: none; padding: 0; }
 .historico.rico li { padding: 8px 0; border-bottom: 1px solid var(--borda); display: grid; gap: 2px; }
+
+/* Relatórios */
+.numeros { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.numero { background: var(--cartao); border-radius: 14px; padding: 12px; box-shadow: 0 1px 2px var(--sombra); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.numero small { font-size: 12px; color: var(--sub); }
+.numero b { font-size: 24px; font-variant-numeric: tabular-nums; line-height: 1.15; overflow-wrap: anywhere; }
+.numero span { font-size: 12px; color: var(--sub); }
+.barras { list-style: none; padding: 0; margin: 0 0 4px; }
+.barras li { padding: 6px 0; }
+.barra-txt { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; margin-bottom: 4px; }
+.barra-txt b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.barra-trilho { height: 8px; border-radius: 4px; background: var(--neutro-claro); overflow: hidden; }
+.barra-valor { height: 100%; border-radius: 4px; background: var(--azul-botao); }
+.rel-grupo { font-size: 13px; font-weight: 600; color: var(--sub); margin: 10px 0 2px; }
+.rel-grupo.atrasado { color: var(--c-alerta); }
+.rel-lista { list-style: none; padding: 0; margin: 0; }
+.rel-lista li { display: flex; flex-direction: column; padding: 9px 0; border-bottom: 1px solid var(--borda); cursor: pointer; }
+.rel-lista li:last-child { border-bottom: 0; }
+.rel-lista li span { font-size: 15px; font-weight: 500; }
+.rel-lista li small { font-size: 12px; color: var(--sub); }
+details.avancado h2 { margin-top: 18px; }
+.sub-avancado { border-top: 1px solid var(--borda); padding-top: 4px; margin-top: 12px; }
+.sub-avancado:first-of-type { border-top: 0; margin-top: 0; }

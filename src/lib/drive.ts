@@ -19,10 +19,16 @@ const K_TENTOU = 'drive-tentou-silencioso';
 export interface Conta { email: string; token: string; expira: number; arquivoId?: string }
 
 export type Situacao = 'desligado' | 'sem-config' | 'sincronizando' | 'ok' | 'expirado' | 'erro' | 'offline';
-export interface EstadoDrive { situacao: Situacao; email: string | null; ultima: string | null; mensagem: string | null }
+export interface EstadoDrive { situacao: Situacao; email: string | null; ultima: string | null; mensagem: string | null; pendente: boolean }
+
+/** Sincronização automática no máximo a cada 2 horas (ou na hora, pelo botão "Sincronizar agora"). */
+export const INTERVALO_AUTOMATICO = 2 * 60 * 60_000;
+const K_PENDENTE = 'drive-pendente';
 
 const ouvintes = new Set<(e: EstadoDrive) => void>();
-let estado: EstadoDrive = { situacao: 'desligado', email: null, ultima: localStorage.getItem('drive-ultima'), mensagem: null };
+let estado: EstadoDrive = {
+  situacao: 'desligado', email: null, ultima: localStorage.getItem('drive-ultima'), mensagem: null, pendente: !!localStorage.getItem(K_PENDENTE)
+};
 function publicar(p: Partial<EstadoDrive>) { estado = { ...estado, ...p }; ouvintes.forEach((f) => f(estado)); }
 export function ouvirDrive(f: (e: EstadoDrive) => void) { ouvintes.add(f); f(estado); return () => { ouvintes.delete(f); }; }
 
@@ -78,7 +84,7 @@ export async function tratarRetornoDoLogin(): Promise<boolean> {
 export function sair() {
   gravarConta(null);
   localStorage.removeItem('drive-ultima');
-  publicar({ situacao: 'desligado', email: null, ultima: null, mensagem: null });
+  publicar({ situacao: 'desligado', email: null, ultima: null, mensagem: null, pendente: false });
 }
 
 // ---------------- API do Drive ----------------
@@ -171,6 +177,8 @@ async function sincronizarUmaVez() {
   if (!navigator.onLine) { publicar({ situacao: 'offline' }); return; }
   if (!tokenValido(conta)) { publicar({ situacao: 'expirado' }); return; }
   publicar({ situacao: 'sincronizando', mensagem: null });
+  // alterações feitas durante o envio marcam "pendente" de novo
+  localStorage.removeItem(K_PENDENTE);
   try {
     const local = await pacoteLocal();
     const { id, criado } = await acharOuCriarArquivo(JSON.stringify(local));
@@ -187,8 +195,9 @@ async function sincronizarUmaVez() {
     }
     const ultima = new Date().toISOString();
     localStorage.setItem('drive-ultima', ultima);
-    publicar({ situacao: 'ok', ultima, mensagem: null });
+    publicar({ situacao: 'ok', ultima, mensagem: null, pendente: !!localStorage.getItem(K_PENDENTE) });
   } catch (e) {
+    if (estado.pendente) localStorage.setItem(K_PENDENTE, '1');
     if (e instanceof SemToken) publicar({ situacao: 'expirado' });
     else if (!navigator.onLine) publicar({ situacao: 'offline' });
     else {
@@ -199,19 +208,42 @@ async function sincronizarUmaVez() {
   }
 }
 
-/** Reconecta sem telas (se o Google permitir) — no máximo uma tentativa por sessão. */
+/** Já passou o intervalo automático desde a última sincronização? */
+export function sincronizacaoVencida(agora = Date.now()): boolean {
+  const u = localStorage.getItem('drive-ultima');
+  return !u || agora - Date.parse(u) >= INTERVALO_AUTOMATICO;
+}
+
+/** Sincroniza só se já passaram 2 horas; senão apenas mostra a situação da conta. */
+export function sincronizarSeVencida(): Promise<void> {
+  if (sincronizacaoVencida()) return sincronizar();
+  const conta = lerConta();
+  if (!driveConfigurado()) publicar({ situacao: 'sem-config' });
+  else if (!conta) publicar({ situacao: 'desligado' });
+  else if (estado.situacao === 'desligado') publicar({ situacao: navigator.onLine ? 'ok' : 'offline', email: conta.email });
+  return Promise.resolve();
+}
+
+/** Botão "Sincronizar agora": se o acesso venceu, reconecta (volta sozinho) e sincroniza. */
+export function sincronizarAgora(): Promise<void> {
+  const c = lerConta();
+  if (c && !tokenValido(c) && navigator.onLine) { sessionStorage.setItem(K_TENTOU, '1'); entrar(true); return Promise.resolve(); }
+  return sincronizar();
+}
+
+/** Marca que há alterações locais ainda não enviadas ao Drive. */
+export function marcarPendente() {
+  if (!lerConta()) return;
+  localStorage.setItem(K_PENDENTE, '1');
+  if (!estado.pendente) publicar({ pendente: true });
+}
+
+/** Reconecta sem telas (se o Google permitir) — só quando a sincronização automática está vencida, uma vez por sessão. */
 export function reconectarSeExpirado(): boolean {
   const c = lerConta();
-  if (!driveConfigurado() || !c || tokenValido(c) || !navigator.onLine) return false;
+  if (!driveConfigurado() || !c || tokenValido(c) || !navigator.onLine || !sincronizacaoVencida()) return false;
   if (sessionStorage.getItem(K_TENTOU)) return false;
   sessionStorage.setItem(K_TENTOU, '1');
   entrar(true);
   return true;
-}
-
-// Sincroniza alguns segundos depois de cada alteração (agrupando várias seguidas)
-let timer: ReturnType<typeof setTimeout> | null = null;
-export function agendarSincronizacao(ms = 8000) {
-  if (!lerConta() || timer) return;
-  timer = setTimeout(() => { timer = null; void sincronizar(); }, ms);
 }
