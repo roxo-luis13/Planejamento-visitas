@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visitas: conectar ao Google Drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Guia de passos para o celular: uma coluna, passos numerados com "telinhas" do próprio app */
+  :root {
+    --fundo: #f3f5f8;
+    --cartao: #ffffff;
+    --texto: #18202b;
+    --sub: #5b6676;
+    --azul: #0b5cad;
+    --azul-claro: #e6effa;
+    --borda: #dfe4ec;
+    --ok-fundo: #e5f4ea; --ok-texto: #12632f;
+    --aviso-fundo: #fff4e3; --aviso-texto: #6b4300; --aviso-borda: #f5d39a;
+    --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fundo: #10151c; --cartao: #19212b; --texto: #e8edf3; --sub: #9aa6b5; --azul: #6aa8ec; --azul-claro: #1c2c40; --borda: #2a3442;
+      --ok-fundo: #15301f; --ok-texto: #8fdba8; --aviso-fundo: #2e2414; --aviso-texto: #f2cf8f; --aviso-borda: #5a4520;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --fundo: #10151c; --cartao: #19212b; --texto: #e8edf3; --sub: #9aa6b5; --azul: #6aa8ec; --azul-claro: #1c2c40; --borda: #2a3442;
+    --ok-fundo: #15301f; --ok-texto: #8fdba8; --aviso-fundo: #2e2414; --aviso-texto: #f2cf8f; --aviso-borda: #5a4520;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--fundo); color: var(--texto); font-family: var(--font); font-size: 17px; line-height: 1.55; }
+  main { max-width: 620px; margin: 0 auto; padding: 28px 18px 48px; display: grid; gap: 18px; }
+
+  header h1 { font-size: 30px; line-height: 1.15; margin: 6px 0 10px; font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+  header p { margin: 0; color: var(--sub); max-width: 60ch; }
+  .marca { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--azul); font-size: 15px; }
+  .marca svg { width: 28px; height: 28px; border-radius: 7px; }
+
+  .cartao { background: var(--cartao); border: 1px solid var(--borda); border-radius: 16px; padding: 18px; }
+  h2 { font-size: 20px; margin: 0 0 12px; font-weight: 700; text-wrap: balance; }
+
+  .ganhos { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .ganhos li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+  .ganhos .ic { width: 28px; height: 28px; border-radius: 8px; background: var(--azul-claro); color: var(--azul); display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+
+  ol.passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; counter-reset: passo; }
+  ol.passos > li { counter-increment: passo; display: grid; grid-template-columns: 36px 1fr; gap: 12px; background: var(--cartao); border: 1px solid var(--borda); border-radius: 16px; padding: 16px; }
+  ol.passos > li::before { content: counter(passo); width: 36px; height: 36px; border-radius: 50%; background: var(--azul); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 17px; }
+  :root[data-theme="dark"] ol.passos > li::before { color: #0b1420; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) ol.passos > li::before { color: #0b1420; } }
+  .passo-titulo { font-weight: 700; margin: 4px 0 4px; }
+  .passo-texto { margin: 0; color: var(--sub); }
+  .passo-texto b { color: var(--texto); }
+
+  /* Miniaturas do que aparece na tela */
+  .tela { margin-top: 10px; border: 1px dashed var(--borda); border-radius: 12px; padding: 12px; background: var(--fundo); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 15px; }
+  .tela small { color: var(--sub); width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .botao-google { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 10px; padding: 9px 16px; font-weight: 600; }
+  .botao-google .g { color: #4285f4; font-weight: 800; font-size: 18px; }
+  .botao { display: inline-flex; align-items: center; border-radius: 10px; padding: 8px 16px; font-weight: 600; background: var(--azul); color: #fff; }
+  :root[data-theme="dark"] .botao { color: #0b1420; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .botao { color: #0b1420; } }
+  .pilula { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 12px; font-weight: 600; font-size: 14px; background: var(--azul-claro); color: var(--azul); }
+  .pilula.ok { background: var(--ok-fundo); color: var(--ok-texto); }
+  .pilula.alerta { background: var(--aviso-fundo); color: var(--aviso-texto); }
+  .aba { display: inline-flex; flex-direction: column; align-items: center; font-size: 12px; color: var(--azul); font-weight: 700; }
+  .aba span { font-size: 22px; line-height: 1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  td { padding: 9px 6px; border-top: 1px solid var(--borda); vertical-align: top; }
+  tr:first-child td { border-top: 0; }
+  td:first-child { width: 92px; white-space: nowrap; }
+
+  .aviso { background: var(--aviso-fundo); border: 1px solid var(--aviso-borda); color: var(--aviso-texto); border-radius: 14px; padding: 14px 16px; }
+  .aviso b { color: inherit; }
+  .problemas { display: grid; gap: 12px; }
+  .problema b { display: block; }
+  .problema p { margin: 2px 0 0; color: var(--sub); }
+
+  .link-app { display: block; text-align: center; background: var(--azul); color: #fff; text-decoration: none; font-weight: 700; padding: 14px; border-radius: 14px; }
+  :root[data-theme="dark"] .link-app { color: #0b1420; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .link-app { color: #0b1420; } }
+  .link-app:focus-visible, a:focus-visible { outline: 3px solid var(--azul); outline-offset: 3px; }
+  .rodape { color: var(--sub); font-size: 14px; text-align: center; margin: 0; }
+  @media (max-width: 400px) { header h1 { font-size: 26px; } ol.passos > li { grid-template-columns: 30px 1fr; padding: 14px; } ol.passos > li::before { width: 30px; height: 30px; font-size: 15px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca">
+      <svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" fill="#0b5cad"/><circle cx="120" cy="380" r="34" fill="#fff"/><path d="M392 72c-44 0-80 36-80 80 0 60 80 140 80 140s80-80 80-140c0-44-36-80-80-80z" fill="#ffd54a"/><circle cx="392" cy="152" r="30" fill="#0b5cad"/></svg>
+      App Visitas
+    </div>
+    <h1>Como guardar seus dados no Google Drive</h1>
+    <p>Leva 1 minuto e é feito uma vez só. Depois disso, tudo o que você faz no app fica salvo na sua conta Google.</p>
+  </header>
+
+  <section class="cartao" aria-labelledby="t-por-que">
+    <h2 id="t-por-que">O que você ganha</h2>
+    <ul class="ganhos">
+      <li><span class="ic">1</span><span><b>Nada se perde</b> se você trocar, perder ou quebrar o iPhone.</span></li>
+      <li><span class="ic">2</span><span><b>Abre em outro aparelho</b> (iPad, computador) com tudo: clientes, endereços confirmados, anotações, rotas e visitas.</span></li>
+      <li><span class="ic">3</span><span><b>É automático:</b> não tem botão de salvar. O app envia sozinho.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="t-passos">
+    <h2 id="t-passos" style="margin-left:4px">Passo a passo</h2>
+    <ol class="passos">
+      <li>
+        <div>
+          <p class="passo-titulo">Atualize o app</p>
+          <p class="passo-texto">Feche o app Visitas e abra de novo pelo ícone na tela de início. Se o passo 2 não aparecer, feche e abra mais uma vez.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Vá em Ajustes</p>
+          <p class="passo-texto">Toque em <b>Ajustes</b>, no canto de baixo à direita.</p>
+          <div class="tela" aria-hidden="true"><small>No rodapé do app</small><span class="aba"><span>⚙️</span>Ajustes</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Toque em “Entrar com Google”</p>
+          <p class="passo-texto">Fica no cartão <b>☁️ Google Drive</b>, logo no topo de Ajustes.</p>
+          <div class="tela" aria-hidden="true"><small>O botão é assim</small><span class="botao-google"><span class="g">G</span> Entrar com Google</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Escolha a sua conta Google</p>
+          <p class="passo-texto">Use <b>o Gmail que você passou para o Luis</b>. A senha, se pedir, é digitada na página do próprio Google.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Se aparecer “O Google não verificou este app”</p>
+          <p class="passo-texto">É normal. Toque em <b>Continuar</b>. O app é seu e está em fase de testes.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Permita o acesso ao Drive</p>
+          <p class="passo-texto">Toque em <b>Continuar</b> ou <b>Permitir</b>. O app só consegue ver os arquivos que ele mesmo cria, nada mais do seu Drive.</p>
+          <div class="tela" aria-hidden="true"><small>Na tela do Google</small><span class="botao">Continuar</span></div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p class="passo-titulo">Pronto</p>
+          <p class="passo-texto">Você volta para o app e aparece <b>“Conectado como”</b> com o seu e-mail. No topo da tela fica uma nuvem com um tique.</p>
+          <div class="tela" aria-hidden="true"><small>No topo do app</small><span class="pilula">☁️✓</span><span class="pilula ok">✓ Sincronizado</span></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="cartao" aria-labelledby="t-icone">
+    <h2 id="t-icone">O que a nuvem no topo quer dizer</h2>
+    <table>
+      <tr><td><span class="pilula">☁️✓</span></td><td>Tudo salvo no Drive.</td></tr>
+      <tr><td><span class="pilula">☁️↻</span></td><td>Enviando agora. Espere alguns segundos.</td></tr>
+      <tr><td><span class="pilula">☁️⏸</span></td><td>Sem internet. Continue usando normalmente: envia quando o sinal voltar.</td></tr>
+      <tr><td><span class="pilula alerta">☁️!</span></td><td>Precisa de você. Veja abaixo.</td></tr>
+    </table>
+  </section>
+
+  <div class="aviso">
+    <b>De vez em quando aparece “☁️ Toque para reconectar”.</b>
+    O Google pede para renovar o acesso a cada hora mais ou menos. Basta tocar na faixa. Enquanto isso, nada se perde: fica guardado no iPhone e sobe depois.
+  </div>
+
+  <section class="cartao" aria-labelledby="t-outro">
+    <h2 id="t-outro">Para usar em outro aparelho</h2>
+    <p style="margin:0">Abra o app no outro aparelho, vá em <b>Ajustes → Entrar com Google</b> e use <b>a mesma conta</b>. Em alguns segundos aparece tudo o que você já fez.</p>
+  </section>
+
+  <section class="cartao" aria-labelledby="t-cuidados">
+    <h2 id="t-cuidados">Dois cuidados</h2>
+    <ul class="ganhos">
+      <li><span class="ic">!</span><span>No Google Drive vai aparecer a pasta <b>App Visitas</b>. <b>Não apague nem mova</b> essa pasta nem o arquivo dentro dela.</span></li>
+      <li><span class="ic">!</span><span>Depois de mexer em algo, espere uns <b>10 segundos</b> antes de fechar o app. Se fechar antes, não tem problema: envia na próxima vez que abrir.</span></li>
+    </ul>
+  </section>
+
+  <section class="cartao" aria-labelledby="t-problemas">
+    <h2 id="t-problemas">Se der algum problema</h2>
+    <div class="problemas">
+      <div class="problema"><b>“Acesso bloqueado” ou “não concluiu a verificação”</b><p>Seu e-mail ainda não foi liberado. Avise o Luis e diga qual Gmail usou.</p></div>
+      <div class="problema"><b>Abriu o Google e não voltou para o app</b><p>Feche tudo e abra o app de novo pelo ícone. Se continuar, avise o Luis.</p></div>
+      <div class="problema"><b>Apareceu “Erro 400”</b><p>Tire um print da tela e mande para o Luis.</p></div>
+    </div>
+  </section>
+
+  <a class="link-app" href="https://roxo-luis13.github.io/Planejamento-visitas/">Abrir o app Visitas</a>
+  <p class="rodape">Dúvidas? Fale com o Luis.</p>
+</main>
+</body>
+</html>
