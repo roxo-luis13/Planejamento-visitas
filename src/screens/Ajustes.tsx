@@ -146,8 +146,19 @@ export default function Ajustes() {
       </section>
 
       <section className="cartao">
+        <h2>Instalar no iPhone</h2>
+        <ol className="nota-peq">
+          <li>Abra o endereço do app no <b>Safari</b>.</li>
+          <li>Toque em <b>Compartilhar</b> (quadrado com seta).</li>
+          <li>Escolha <b>Adicionar à Tela de Início</b>.</li>
+          <li>Use sempre pelo ícone: assim os dados ficam guardados e o app funciona sem internet.</li>
+        </ol>
+      </section>
+      <details className="cartao avancado">
+        <summary>Avançado</summary>
         <h2>Backup em arquivo</h2>
-        <p className="nota-peq">Com o Google Drive conectado, o backup é automático. Aqui você também pode salvar uma cópia em arquivo.</p>
+        <p className="nota-peq">Com o Google Drive conectado, tudo já é salvo sozinho e o Drive guarda versões anteriores.
+          Use isto só se precisar de uma cópia em arquivo (por exemplo, para enviar a alguém) ou para restaurar uma cópia antiga.</p>
         <div className="botoes">
           <button className="btn" onClick={baixarBackup}>💾 Salvar backup</button>
           <button className="btn btn-sec" onClick={() => arqBackup.current?.click()}>Restaurar backup</button>
@@ -158,17 +169,8 @@ export default function Ajustes() {
           try { await restaurarBackup(f); setMsgBackup('Backup restaurado ✓'); } catch (err) { setMsgBackup('Erro: ' + (err as Error).message); }
         }} />
         {msgBackup && <div className="msg">{msgBackup}</div>}
-      </section>
+      </details>
 
-      <section className="cartao">
-        <h2>Instalar no iPhone</h2>
-        <ol className="nota-peq">
-          <li>Abra o endereço do app no <b>Safari</b>.</li>
-          <li>Toque em <b>Compartilhar</b> (quadrado com seta).</li>
-          <li>Escolha <b>Adicionar à Tela de Início</b>.</li>
-          <li>Use sempre pelo ícone: assim os dados ficam guardados e o app funciona sem internet.</li>
-        </ol>
-      </section>
     </div>
   );
 }

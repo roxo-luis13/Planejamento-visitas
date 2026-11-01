@@ -15,6 +15,7 @@ export default function CartaoDrive() {
         <p className="nota-peq">A conexão com o Google Drive ainda não foi ativada nesta versão do app.</p>
       ) : !e.email ? (
         <>
+          <div className="alerta">⚠️ Sem o Google conectado, seus dados ficam <b>só neste aparelho</b>. Se trocar ou perder o iPhone, perde o que fez.</div>
           <p className="nota-peq">Entre com sua conta Google para guardar tudo no <b>seu Google Drive</b>: clientes, endereços confirmados,
             anotações, rotas e visitas. Assim você abre o app em outro aparelho e continua de onde parou.</p>
           <button className="btn btn-bloco btn-google" onClick={() => entrar(false)}><span className="g">G</span> Entrar com Google</button>

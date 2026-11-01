@@ -230,3 +230,7 @@ code { background: #eef1f5; padding: 1px 4px; border-radius: 4px; font-size: 12p
 .drive-status.sincronizando { background: #e8f0fb; color: var(--azul); }
 .drive-status.offline { background: #f1f3f4; color: var(--sub); }
 .drive-status.expirado, .drive-status.erro { background: #fdecea; color: #d93025; }
+details.avancado > summary { font-size: 16px; font-weight: 600; color: var(--sub); list-style: none; cursor: pointer; }
+details.avancado > summary::before { content: '▸ '; }
+details.avancado[open] > summary::before { content: '▾ '; }
+details.avancado[open] > summary { margin-bottom: 8px; }
