@@ -58,9 +58,9 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
       const c = clientes.get(p.codigo);
       if (!c?.local) return;
       m.push({ id: c.codigo, lat: c.local.lat, lng: c.local.lng, rotulo: String(i + 1), titulo: c.fantasia,
-        cor: p.resultado ? '#80868b' : '#0b5cad', aproximado: PRECISOES[c.local.precisao].alerta });
+        cor: p.resultado ? 'var(--c-cinza)' : 'var(--azul-botao)', aproximado: PRECISOES[c.local.precisao].alerta });
     });
-    if (partida) m.push({ id: '_partida', lat: partida.lat, lng: partida.lng, rotulo: '🏁', cor: '#1e8e3e', titulo: partida.rotulo });
+    if (partida) m.push({ id: '_partida', lat: partida.lat, lng: partida.lng, rotulo: '🏁', cor: 'var(--c-ok)', titulo: partida.rotulo });
     return m;
   }, [paradas, clientes, partida]);
   const tracado = useMemo(() => (calculo?.polyline ? decodificarPolyline(calculo.polyline) : undefined), [calculo?.polyline]);

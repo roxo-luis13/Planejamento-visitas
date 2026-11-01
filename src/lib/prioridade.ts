@@ -14,11 +14,11 @@ export interface Prioridade {
 }
 
 export const NIVEIS: Record<NivelPrioridade, { rotulo: string; cor: string; emoji: string }> = {
-  atrasado: { rotulo: 'Atrasado', cor: '#d93025', emoji: '🔴' },
-  proximo: { rotulo: 'Perto do ciclo', cor: '#e8a100', emoji: '🟡' },
-  em_dia: { rotulo: 'Em dia', cor: '#1e8e3e', emoji: '🟢' },
-  inativo: { rotulo: 'Reativar', cor: '#7b5ea7', emoji: '🟣' },
-  sem_historico: { rotulo: 'Sem histórico', cor: '#80868b', emoji: '⚪' }
+  atrasado: { rotulo: 'Atrasado', cor: 'var(--c-alerta)', emoji: '🔴' },
+  proximo: { rotulo: 'Perto do ciclo', cor: 'var(--c-amarelo)', emoji: '🟡' },
+  em_dia: { rotulo: 'Em dia', cor: 'var(--c-ok)', emoji: '🟢' },
+  inativo: { rotulo: 'Reativar', cor: 'var(--c-roxo)', emoji: '🟣' },
+  sem_historico: { rotulo: 'Sem histórico', cor: 'var(--c-cinza)', emoji: '⚪' }
 };
 
 const DIAS_INATIVO = 540; // 18 meses sem comprar = reativação

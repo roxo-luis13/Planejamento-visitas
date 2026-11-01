@@ -23,6 +23,10 @@ interface Props {
 
 const CENTRO_SP: L.LatLngExpression = [-23.55, -46.63];
 
+/** Cor do tema atual (linhas do mapa em SVG não aceitam var(--...)). */
+const corTema = (nome: string, padrao: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(nome).trim() || padrao;
+
 export default function Mapa({ marcadores, linha, tracado, arrastavel, aoTocar, altura = 260 }: Props) {
   const div = useRef<HTMLDivElement>(null);
   const mapa = useRef<L.Map | null>(null);
@@ -44,10 +48,10 @@ export default function Mapa({ marcadores, linha, tracado, arrastavel, aoTocar, 
     g.clearLayers();
     const limites: L.LatLngExpression[] = [];
     if (linha && linha.length > 1) {
-      L.polyline(linha.map((p): L.LatLngTuple => [p.lat, p.lng]), { color: '#0b5cad', weight: 3, opacity: 0.6, dashArray: '6 6' }).addTo(g);
+      L.polyline(linha.map((p): L.LatLngTuple => [p.lat, p.lng]), { color: corTema('--azul', '#0b5cad'), weight: 3, opacity: 0.7, dashArray: '6 6' }).addTo(g);
     }
     if (tracado && tracado.length > 1) {
-      L.polyline(tracado.map((p): L.LatLngTuple => [p.lat, p.lng]), { color: '#0b5cad', weight: 5, opacity: 0.8 }).addTo(g);
+      L.polyline(tracado.map((p): L.LatLngTuple => [p.lat, p.lng]), { color: corTema('--azul', '#0b5cad'), weight: 5, opacity: 0.85 }).addTo(g);
       tracado.forEach((p) => limites.push([p.lat, p.lng]));
     }
     for (const mk of marcadores) {
