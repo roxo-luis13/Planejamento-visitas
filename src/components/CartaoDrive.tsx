@@ -33,8 +33,8 @@ export default function CartaoDrive() {
               {e.situacao === 'erro' && '! Erro'}
             </span>
           </div>
-          <p className="nota-peq">Última sincronização: {hora(e.ultima)}. O app sincroniza sozinho <b>a cada 2 horas</b>; para enviar na hora, toque em <b>Sincronizar agora</b>.</p>
-          {e.pendente && e.situacao !== 'sincronizando' && <div className="alerta">• Há alterações neste aparelho ainda não enviadas ao Drive.</div>}
+          <p className="nota-peq">Última sincronização: {hora(e.ultima)}. Quando você mexe em algo, o app envia sozinho <b>1 minuto depois</b>; sem mudanças, confere o Drive a cada 2 horas.</p>
+          {e.pendente && e.situacao !== 'sincronizando' && <div className="alerta">• Há alterações neste aparelho ainda não enviadas ao Drive (vão em até 1 minuto, se houver internet).</div>}
           {e.situacao === 'expirado' && (
             <div className="alerta">O acesso ao Drive venceu (o Google pede a cada tempo). Toque para reconectar. Normalmente é automático.
               <button className="btn btn-peq" style={{ marginTop: 8 }} onClick={() => entrar(true)}>Reconectar</button></div>

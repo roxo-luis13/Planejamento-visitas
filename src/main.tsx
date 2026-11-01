@@ -14,7 +14,7 @@ async function iniciar() {
 
   // Acabou de entrar no Google: sincroniza já. Senão, só se passaram 2 horas desde a última vez.
   void (voltouDoLogin ? sincronizar() : sincronizarSeVencida());
-  // Alterações locais ficam marcadas como pendentes e vão no próximo envio (automático a cada 2 h ou pelo botão)
+  // Alteração local: marca como pendente e envia 1 minuto depois (juntando as alterações desse minuto)
   Dexie.on('storagemutated', (partes: Record<string, unknown>) => {
     if (estaAplicandoRemoto()) return;
     const tabelas = Object.keys(partes).map((k) => k.split('/')[3]);
@@ -22,7 +22,10 @@ async function iniciar() {
     marcarPendente();
   });
   window.addEventListener('online', () => void sincronizarSeVencida());
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void sincronizarSeVencida(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void sincronizarSeVencida();
+    else if (localStorage.getItem('drive-pendente')) void sincronizar(); // saindo do app: tenta enviar já o que falta
+  });
   setInterval(() => { if (document.visibilityState === 'visible') void sincronizarSeVencida(); }, 5 * 60_000);
 }
 

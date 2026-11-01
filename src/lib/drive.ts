@@ -21,7 +21,7 @@ export interface Conta { email: string; token: string; expira: number; arquivoId
 export type Situacao = 'desligado' | 'sem-config' | 'sincronizando' | 'ok' | 'expirado' | 'erro' | 'offline';
 export interface EstadoDrive { situacao: Situacao; email: string | null; ultima: string | null; mensagem: string | null; pendente: boolean }
 
-/** Sincronização automática no máximo a cada 2 horas (ou na hora, pelo botão "Sincronizar agora"). */
+/** Sem alterações, sincroniza a cada 2 horas; com alterações, 1 minuto depois (ou na hora, pelo botão "Sincronizar agora"). */
 export const INTERVALO_AUTOMATICO = 2 * 60 * 60_000;
 const K_PENDENTE = 'drive-pendente';
 
@@ -214,9 +214,9 @@ export function sincronizacaoVencida(agora = Date.now()): boolean {
   return !u || agora - Date.parse(u) >= INTERVALO_AUTOMATICO;
 }
 
-/** Sincroniza só se já passaram 2 horas; senão apenas mostra a situação da conta. */
+/** Sincroniza se já passaram 2 horas ou se ficou alteração sem enviar; senão apenas mostra a situação da conta. */
 export function sincronizarSeVencida(): Promise<void> {
-  if (sincronizacaoVencida()) return sincronizar();
+  if (sincronizacaoVencida() || (localStorage.getItem(K_PENDENTE) && !timer && lerConta())) return sincronizar();
   const conta = lerConta();
   if (!driveConfigurado()) publicar({ situacao: 'sem-config' });
   else if (!conta) publicar({ situacao: 'desligado' });
@@ -231,17 +231,23 @@ export function sincronizarAgora(): Promise<void> {
   return sincronizar();
 }
 
-/** Marca que há alterações locais ainda não enviadas ao Drive. */
+/** Espera depois de uma alteração, juntando as que vierem nesse tempo num envio só. */
+export const ESPERA_APOS_MUDANCA = 60_000;
+let timer: ReturnType<typeof setTimeout> | null = null;
+
+/** Marca que há alterações locais e agenda o envio para daqui a 1 minuto. */
 export function marcarPendente() {
   if (!lerConta()) return;
   localStorage.setItem(K_PENDENTE, '1');
   if (!estado.pendente) publicar({ pendente: true });
+  if (!timer) timer = setTimeout(() => { timer = null; void sincronizar(); }, ESPERA_APOS_MUDANCA);
 }
 
-/** Reconecta sem telas (se o Google permitir) — só quando a sincronização automática está vencida, uma vez por sessão. */
+/** Reconecta sem telas (se o Google permitir) quando há algo a enviar ou a sincronização está vencida — uma vez por sessão. */
 export function reconectarSeExpirado(): boolean {
   const c = lerConta();
-  if (!driveConfigurado() || !c || tokenValido(c) || !navigator.onLine || !sincronizacaoVencida()) return false;
+  if (!driveConfigurado() || !c || tokenValido(c) || !navigator.onLine) return false;
+  if (!sincronizacaoVencida() && !localStorage.getItem(K_PENDENTE)) return false;
   if (sessionStorage.getItem(K_TENTOU)) return false;
   sessionStorage.setItem(K_TENTOU, '1');
   entrar(true);
