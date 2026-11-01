@@ -1,0 +1,8 @@
+node_modules
+dist
+dev-dist
+*.local
+# Planilhas com dados reais de clientes não vão para o repositório
+*.xls
+*.xlsx
+*.csv
