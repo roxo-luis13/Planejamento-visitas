@@ -23,8 +23,8 @@ const mostrarValor = (n: number | null | undefined) => (n == null ? '' : n.toLoc
  * Registro da visita: resultado, pedido (peças por marca, valor, nº), motivo, contato,
  * assuntos, retorno e observação. NADA é obrigatório.
  */
-export default function RegistroVisita({ data, cliente, checkinEm, aoFechar }: {
-  data: string; cliente: Cliente; checkinEm: string | null; aoFechar: () => void;
+export default function RegistroVisita({ data, cliente, checkinEm, saidaEm, aoFechar }: {
+  data: string; cliente: Cliente; checkinEm: string | null; saidaEm?: string | null; aoFechar: () => void;
 }) {
   const [carregado, setCarregado] = useState(false);
   const [existente, setExistente] = useState<Visita | null>(null);
@@ -105,7 +105,7 @@ export default function RegistroVisita({ data, cliente, checkinEm, aoFechar }: {
       resultado: resultado ?? (pedido ? 'pedido' : 'visitado'),
       motivo, contato: contato.trim(), assuntos, pedido,
       retorno: retorno || null, lancarRetornoNaRota: lancar,
-      nota: nota.trim(), gps, chegadaEm: checkinEm, saidaEm: existente?.saidaEm ?? new Date().toISOString()
+      nota: nota.trim(), gps, chegadaEm: checkinEm, saidaEm: existente?.saidaEm ?? saidaEm ?? new Date().toISOString()
     });
     aoFechar();
   }
@@ -202,6 +202,9 @@ export default function RegistroVisita({ data, cliente, checkinEm, aoFechar }: {
             {retorno && <button className="btn-link" onClick={() => setRetorno('')}>Limpar</button>}
           </div>
           {retorno && <label className="check"><input type="checkbox" checked={lancar} onChange={(e) => setLancar(e.target.checked)} /> Colocar na rota de {formatarData(retorno)}</label>}
+          {retorno && (localStorage.getItem('agenda-ativa')
+            ? <p className="nota-peq">📅 Vai para a sua Agenda Google, com aviso 2 dias antes e no dia às 08:00.</p>
+            : <p className="nota-peq">Quer ser avisado? Ative os <b>lembretes de retorno</b> em Ajustes.</p>)}
 
           <h3 className="sub-titulo">Observação</h3>
           <textarea rows={3} placeholder="Ex: pediu catálogo da coleção de verão" value={nota} onChange={(e) => setNota(e.target.value)} />

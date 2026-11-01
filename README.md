@@ -23,6 +23,17 @@ para visitas fora da rota):
 
 Motivos e assuntos são **listas fixas**, para poderem ser somados nos relatórios.
 
+### Chegada pelo GPS e lembretes de retorno
+- **Detectar chegada** (cartão na Rota de hoje, botão Ativar): com o app **aberto na tela**, quem fica a menos de ~120 m de um
+  cliente da rota por 1 minuto ganha o "Cheguei" automático; ao se afastar ~250 m, o app guarda a saída e pergunta se quer
+  registrar a visita (e manda notificação, se permitida). Ao abrir o app perto de um cliente, pergunta "Você está na loja X?".
+  Só usa clientes com localização confiável (não usa o centro do bairro/cidade). Limitação do iPhone: apps da web não usam o GPS em segundo plano.
+- Chegou e não registrou: aviso na Rota (depois que saiu, em outro dia ou após 1h30).
+- **Lembretes de retorno** (Ajustes → 📅 Lembretes de retorno): cada retorno combinado vira um evento na **Agenda Google**,
+  às 08:00 do dia, com avisos 2 dias antes e na hora. O app cria, corrige e apaga os eventos sozinho (depois de cada
+  sincronização com o Drive); IDs fixos por cliente+data evitam duplicar entre aparelhos. Permissão extra: `calendar.events`.
+  No Google Cloud: ativar a **Google Calendar API** e incluir o escopo `.../auth/calendar.events` na tela de permissão OAuth.
+
 ### Relatórios
 Aba **📊 Relatórios**, com filtro de período (este mês, mês passado, últimos 30/90 dias, tudo):
 - Números do período: visitas, clientes e dias em campo, pedidos e taxa de pedido (sobre as visitas atendidas), peças,

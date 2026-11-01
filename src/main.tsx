@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import Dexie from 'dexie';
 import App from './App';
 import './styles.css';
-import { estaAplicandoRemoto, marcarPendente, reconectarSeExpirado, sincronizar, sincronizarSeVencida, tratarRetornoDoLogin } from './lib/drive';
+import { sincronizarAgenda } from './lib/agenda';
+import { estaAplicandoRemoto, ouvirDrive, marcarPendente, reconectarSeExpirado, sincronizar, sincronizarSeVencida, tratarRetornoDoLogin } from './lib/drive';
 
 async function iniciar() {
   // Volta do login do Google (#access_token=...) ou reconexão silenciosa quando o acesso venceu
@@ -12,6 +13,9 @@ async function iniciar() {
 
   createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
 
+  // Depois de cada sincronização com o Drive, deixa a Agenda em dia com os retornos
+  let ultimaVista: string | null = null;
+  ouvirDrive((e) => { if (e.situacao === 'ok' && e.ultima !== ultimaVista) { ultimaVista = e.ultima; void sincronizarAgenda(); } });
   // Acabou de entrar no Google: sincroniza já. Senão, só se passaram 2 horas desde a última vez.
   void (voltouDoLogin ? sincronizar() : sincronizarSeVencida());
   // Alteração local: marca como pendente e envia 1 minuto depois (juntando as alterações desse minuto)

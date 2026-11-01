@@ -7,6 +7,8 @@ import Relatorios from './screens/Relatorios';
 import { hojeISO } from './lib/texto';
 import { iniciarFila } from './lib/filaGeo';
 import { entrar, ouvirDrive, type EstadoDrive } from './lib/drive';
+import { iniciarPresenca } from './lib/presenca';
+import AvisoPresenca from './components/AvisoPresenca';
 
 type Aba = 'hoje' | 'carteira' | 'relatorios' | 'ajustes';
 
@@ -25,6 +27,7 @@ export default function App() {
     // Pede ao navegador para não apagar os dados do app
     void navigator.storage?.persist?.();
     void iniciarFila();
+    iniciarPresenca();
   }, []);
 
   // Botão "voltar" do sistema fecha a ficha do cliente
@@ -73,6 +76,7 @@ export default function App() {
           : aba === 'relatorios' ? <Relatorios abrirCliente={abrirCliente} />
           : <Ajustes />}
       </main>
+      <AvisoPresenca />
       <nav className="abas">
         {([['hoje', '🗺️', 'Rota'], ['carteira', '👥', 'Carteira'], ['relatorios', '📊', 'Relatórios'], ['ajustes', '⚙️', 'Ajustes']] as const).map(([id, ic, rot]) => (
           <button key={id} className={aba === id && !cliente ? 'ativa' : ''} onClick={() => irPara(id)}>

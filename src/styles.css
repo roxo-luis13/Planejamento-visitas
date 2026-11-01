@@ -354,3 +354,15 @@ details.avancado[open] > summary { margin-bottom: 8px; }
 details.avancado h2 { margin-top: 18px; }
 .sub-avancado { border-top: 1px solid var(--borda); padding-top: 4px; margin-top: 12px; }
 .sub-avancado:first-of-type { border-top: 0; margin-top: 0; }
+
+/* Aviso do GPS (chegada / saída) */
+.aviso-presenca { position: fixed; left: 10px; right: 10px; bottom: calc(var(--abas) + env(safe-area-inset-bottom) + 10px); z-index: 950;
+  background: var(--cartao); border: 2px solid var(--azul); border-radius: 14px; padding: 12px 14px; box-shadow: 0 6px 24px var(--sombra), 0 2px 6px var(--sombra);
+  animation: subir .2s ease-out; }
+.aviso-presenca p { margin: 0 0 8px; font-size: 15px; }
+.aviso-presenca .botoes { margin: 0; align-items: center; }
+.aviso-presenca.saiu { border-color: var(--c-atencao); }
+@keyframes subir { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cartao-gps { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.cartao-gps small { display: block; color: var(--sub); font-size: 12px; }
+.erro-txt { color: var(--vermelho) !important; margin-top: 4px; }

@@ -16,7 +16,10 @@ const K_CONTA = 'drive-conta';      // { email, token, expira, arquivoId }
 const K_ESTADO = 'drive-estado-oauth';
 const K_TENTOU = 'drive-tentou-silencioso';
 
-export interface Conta { email: string; token: string; expira: number; arquivoId?: string }
+export interface Conta { email: string; token: string; expira: number; arquivoId?: string; escopos?: string }
+
+export const ESCOPO_AGENDA = 'https://www.googleapis.com/auth/calendar.events';
+export const K_AGENDA = 'agenda-ativa';
 
 export type Situacao = 'desligado' | 'sem-config' | 'sincronizando' | 'ok' | 'expirado' | 'erro' | 'offline';
 export interface EstadoDrive { situacao: Situacao; email: string | null; ultima: string | null; mensagem: string | null; pendente: boolean }
@@ -38,6 +41,12 @@ export function lerConta(): Conta | null {
 }
 function gravarConta(c: Conta | null) { if (c) localStorage.setItem(K_CONTA, JSON.stringify(c)); else localStorage.removeItem(K_CONTA); }
 const tokenValido = (c: Conta | null) => !!c && c.expira > Date.now() + 60_000;
+/** Token de acesso ainda válido (ou null). */
+export function tokenAtual(): string | null { const c = lerConta(); return tokenValido(c) ? c!.token : null; }
+/** A conta conectada autorizou a Agenda? */
+export const agendaAutorizada = () => (lerConta()?.escopos ?? '').includes(ESCOPO_AGENDA);
+/** O acesso venceu: marca para reconectar. */
+export function tokenVencido() { const c = lerConta(); if (c) { gravarConta({ ...c, expira: 0 }); publicar({ situacao: 'expirado' }); } }
 
 function enderecoDoApp() { return location.origin + location.pathname.replace(/index\.html$/, ''); }
 
@@ -48,7 +57,9 @@ export function entrar(silencioso = false) {
   sessionStorage.setItem('drive-voltar-hash', location.hash);
   const conta = lerConta();
   const p = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID, redirect_uri: enderecoDoApp(), response_type: 'token', scope: ESCOPO,
+    // a Agenda só é pedida no login com tela (o silencioso reaproveita o que já foi autorizado: include_granted_scopes)
+    client_id: GOOGLE_CLIENT_ID, redirect_uri: enderecoDoApp(), response_type: 'token',
+    scope: !silencioso && localStorage.getItem(K_AGENDA) ? `${ESCOPO} ${ESCOPO_AGENDA}` : ESCOPO,
     include_granted_scopes: 'true', state: estadoOauth, prompt: silencioso ? 'none' : 'select_account'
   });
   if (conta?.email) p.set('login_hint', conta.email);
@@ -75,7 +86,7 @@ export async function tratarRetornoDoLogin(): Promise<boolean> {
     if (u.ok) email = (await u.json()).email ?? email;
   } catch { /* segue */ }
   const anterior = lerConta();
-  gravarConta({ email, token, expira, arquivoId: anterior?.email === email ? anterior.arquivoId : undefined });
+  gravarConta({ email, token, expira, arquivoId: anterior?.email === email ? anterior.arquivoId : undefined, escopos: r.get('scope') ?? '' });
   sessionStorage.removeItem(K_TENTOU);
   publicar({ email, mensagem: null });
   return true;

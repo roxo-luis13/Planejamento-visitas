@@ -201,6 +201,15 @@ export async function marcarChegada(data: string, codigo: string) {
   return p.checkinEm;
 }
 
+/** Saída detectada pelo GPS: guarda o horário para a duração da visita ficar certa mesmo registrando depois. */
+export async function marcarSaida(data: string, codigo: string) {
+  const r = await obterRota(data);
+  const p = r.paradas.find((x) => x.codigo === codigo);
+  if (!p || p.resultado) return;
+  p.saidaEm = new Date().toISOString();
+  await salvarRota(r);
+}
+
 /** Última visita (não desfeita) de um cliente, para sugerir o contato. */
 export async function ultimaVisita(codigo: string): Promise<Visita | undefined> {
   const vs = (await db.historico.where('codigo').equals(codigo).toArray()).filter((v) => !v.removido);

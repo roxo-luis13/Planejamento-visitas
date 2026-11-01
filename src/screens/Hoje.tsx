@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, lerConfig, obterRota } from '../db';
 import type { Cliente, Parada } from '../types';
 import { rotuloResultado } from '../types';
-import { resumoVisita } from '../lib/relatorio';
+import { resumoVisita, retornosPendentes } from '../lib/relatorio';
+import { ativarPresenca, desativarPresenca, ouvirLigado, presencaAtiva } from '../lib/presenca';
 import RegistroVisita from '../components/RegistroVisita';
 import { alternarNaRota, marcarChegada, moverParada, otimizarRota } from '../lib/acoes';
 import { estimar } from '../lib/rota';
@@ -35,6 +36,17 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
   const visitasDoDia = useLiveQuery(() => db.historico.where('data').equals(data).toArray(), [data]) ?? [];
   const visitaDe = useMemo(() => new Map(visitasDoDia.filter((v) => !v.removido).map((v) => [v.codigo, v])), [visitasDoDia]);
   const [ocupado, setOcupado] = useState(false);
+  const ehHoje = data === hojeISO();
+  // chegou e não registrou: já saiu, é outro dia, ou faz mais de 1h30 que chegou
+  const faltaRegistrar = (p: Parada) => !!p.checkinEm && !p.resultado && (!!p.saidaEm || !ehHoje || Date.now() - Date.parse(p.checkinEm) > 90 * 60_000);
+  const [gpsLigado, setGpsLigado] = useState(false);
+  const [gpsAtivo, setGpsAtivo] = useState(presencaAtiva());
+  const [msgGps, setMsgGps] = useState('');
+  useEffect(() => ouvirLigado(setGpsLigado), []);
+  // Retornos combinados para este dia (que ainda não aconteceram)
+  const retornosDoDia = useLiveQuery(async () => retornosPendentes(await db.historico.toArray()).filter((x) => x.retorno === data), [data]) ?? [];
+  const nomesRetorno = useLiveQuery(async () => (await db.clientes.bulkGet(retornosDoDia.map((x) => x.codigo)))
+    .filter((c): c is Cliente => !!c).map((c) => ({ codigo: c.codigo, nome: c.fantasia })), [retornosDoDia.map((x) => x.codigo).join(',')]) ?? [];
 
   const paradas = rota?.paradas ?? [];
   const partida = rota?.partida ?? null;
@@ -102,6 +114,31 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
         <Saida rota={rota} cfg={cfg} />
       </div>
 
+      {nomesRetorno.length > 0 && (
+        <div className="alerta-neutro">📅 Retorno combinado para {ehHoje ? 'hoje' : 'este dia'}:{' '}
+          {nomesRetorno.map((x, i) => <span key={x.codigo}>{i ? ', ' : ''}<button className="btn-link" onClick={() => abrirCliente(x.codigo)}>{x.nome}</button></span>)}
+        </div>
+      )}
+
+      {ehHoje && paradas.length > 0 && (
+        <div className="cartao cartao-gps">
+          {gpsAtivo ? (
+            <>
+              <div><b>📍 Detectar chegada {gpsLigado ? 'ligado' : '(aguardando GPS)'}</b>
+                <small>Com o app aberto, marca "Cheguei" sozinho e, ao sair da loja, pergunta se quer registrar a visita.</small></div>
+              <button className="btn-link" onClick={() => { desativarPresenca(); setGpsAtivo(false); }}>Desligar</button>
+            </>
+          ) : (
+            <>
+              <div><b>📍 Detectar chegada pelo GPS</b>
+                <small>Marca "Cheguei" sozinho e lembra de registrar a visita ao sair. Funciona com o app aberto.</small>
+                {msgGps && <small className="erro-txt">{msgGps}</small>}</div>
+              <button className="btn btn-peq" onClick={async () => { const e = await ativarPresenca(); setMsgGps(e ?? ''); setGpsAtivo(!e); }}>Ativar</button>
+            </>
+          )}
+        </div>
+      )}
+
       {!paradas.length ? (
         <div className="vazio">
           <p>Nenhuma visita planejada para {nomeDia(data)}.</p>
@@ -167,6 +204,10 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
             {erro && <div className="alerta erro">{erro}</div>}
           </div>
 
+          {paradas.some((p) => faltaRegistrar(p)) && (
+            <div className="alerta">⏰ {paradas.filter((p) => faltaRegistrar(p)).length} visita(s) com chegada e <b>sem registro</b>. Toque em "Registrar visita" no cliente.</div>
+          )}
+
           <Mapa marcadores={marcadores} linha={linha} tracado={tracado} aoTocar={(id) => id !== '_partida' && abrirCliente(id)} />
 
           <ol className="lista paradas">
@@ -193,7 +234,7 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
                       )}
                       <div className="selos"><SeloPrioridade c={c} /><SeloFinanceiro c={c} /><SeloLocal c={c} /></div>
                       {res && <div className="resultado">{res.emoji} {res.rotulo}{v && resumoVisita(v) ? ` · ${resumoVisita(v)}` : ''}</div>}
-                      {!p.resultado && p.checkinEm && <div className="eta">📍 No cliente desde {hora(new Date(p.checkinEm))}</div>}
+                      {!p.resultado && p.checkinEm && <div className="eta">📍 Chegou {hora(new Date(p.checkinEm))}{p.saidaEm ? ` · saiu ${hora(new Date(p.saidaEm))} · falta registrar` : ''}</div>}
                     </div>
                     <div className="botoes">
                       {c.local && <BotaoNavegar lat={c.local.lat} lng={c.local.lng} nome={c.fantasia} compacto />}
@@ -217,7 +258,8 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
 
       {registrando && clientes.get(registrando.codigo) && (
         <RegistroVisita data={data} cliente={clientes.get(registrando.codigo)!} aoFechar={() => setRegistrando(null)}
-          checkinEm={paradas.find((x) => x.codigo === registrando.codigo)?.checkinEm ?? null} />
+          checkinEm={paradas.find((x) => x.codigo === registrando.codigo)?.checkinEm ?? null}
+          saidaEm={paradas.find((x) => x.codigo === registrando.codigo)?.saidaEm} />
       )}
     </div>
   );

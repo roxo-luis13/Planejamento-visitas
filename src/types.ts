@@ -115,6 +115,7 @@ export interface Parada {
   resultado: Resultado | null;
   nota: string;
   checkinEm: string | null;
+  saidaEm?: string | null;    // saída detectada pelo GPS (antes de registrar a visita)
 }
 
 export interface Partida {
