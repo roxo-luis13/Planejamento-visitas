@@ -8,7 +8,7 @@ Roda no Safari do iPhone e é instalado em *Compartilhar → Adicionar à Tela d
 | Tela | Funções |
 |---|---|
 | **Rota** | Dia selecionável · **saída escolhida aqui** (localização atual, locais salvos como Casa/Escritório, ou busca de endereço; ★ = padrão dos próximos dias) · horário de saída · voltar ou não à saída · **otimizar com trânsito (Google)** · km reais, tempo com trânsito e horário de chegada em cada cliente · traçado pelas ruas no mapa · navegar (Apple Mapas / Google Maps / Waze) · registrar resultado da visita |
-| **Carteira** | Busca · filtros por prioridade, microrregião, cidade, bairro e financeiro · ordenação · botão ＋ para pôr na rota do dia |
+| **Carteira** | Busca · filtros por prioridade e financeiro · **microrregião, cidade e bairro com busca digitando** (ignora acentos, mostra quantos clientes há em cada um) · ordenação · botão ＋ para pôr na rota do dia |
 | **Cliente** | Endereço com nível de precisão e alertas · "Estou na loja" (grava o GPS) · ajustar no mapa · corrigir endereço · compras por marca e ano · frequência · financeiro · grupo/rede · anotações · histórico de visitas |
 | **Ajustes** | Chave do Google (com passo a passo e teste) · importar planilha · progresso das sugestões de endereço · tempo por visita · backup/restauração |
 

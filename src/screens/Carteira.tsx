@@ -6,6 +6,7 @@ import { alertaFinanceiro, calcularPrioridade, NIVEIS, type NivelPrioridade } fr
 import { hojeISO, nomeDia, normalizar, titulo } from '../lib/texto';
 import { alternarNaRota } from '../lib/acoes';
 import { SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
+import Escolha, { type Opcao } from '../components/Escolha';
 
 type Ordem = 'prioridade' | 'nome' | 'cidade';
 
@@ -28,9 +29,15 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
   const base = useMemo(() => todos.filter((c) => (foraCarteira ? !c.ativo : c.ativo)), [todos, foraCarteira]);
   const prio = useMemo(() => new Map(base.map((c) => [c.codigo, calcularPrioridade(c, hoje)])), [base, hoje]);
 
-  const micros = useMemo(() => [...new Set(base.map((c) => c.micro))].sort(), [base]);
-  const cidades = useMemo(() => [...new Set(base.filter((c) => !micro || c.micro === micro).map((c) => c.cidade))].sort(), [base, micro]);
-  const bairros = useMemo(() => [...new Set(base.filter((c) => (!micro || c.micro === micro) && (!cidade || c.cidade === cidade)).map((c) => c.bairro))].sort(), [base, micro, cidade]);
+  // Opções com a quantidade de clientes em cada uma
+  const opcoes = (lista: Cliente[], campo: 'micro' | 'cidade' | 'bairro'): Opcao[] => {
+    const cont = new Map<string, number>();
+    for (const c of lista) cont.set(c[campo], (cont.get(c[campo]) ?? 0) + 1);
+    return [...cont.entries()].map(([valor, qtd]) => ({ valor, rotulo: titulo(valor), qtd })).sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  };
+  const micros = useMemo(() => opcoes(base, 'micro'), [base]);
+  const cidades = useMemo(() => opcoes(base.filter((c) => !micro || c.micro === micro), 'cidade'), [base, micro]);
+  const bairros = useMemo(() => opcoes(base.filter((c) => (!micro || c.micro === micro) && (!cidade || c.cidade === cidade)), 'bairro'), [base, micro, cidade]);
 
   const contagem = useMemo(() => {
     const m: Record<string, number> = {};
@@ -83,18 +90,11 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
       </div>
 
       <div className="filtros">
-        <select value={micro} onChange={(e) => { setMicro(e.target.value); setCidade(''); setBairro(''); }}>
-          <option value="">Todas as microrregiões</option>
-          {micros.map((m) => <option key={m} value={m}>{titulo(m)}</option>)}
-        </select>
-        <select value={cidade} onChange={(e) => { setCidade(e.target.value); setBairro(''); }}>
-          <option value="">Todas as cidades</option>
-          {cidades.map((m) => <option key={m} value={m}>{titulo(m)}</option>)}
-        </select>
-        <select value={bairro} onChange={(e) => setBairro(e.target.value)}>
-          <option value="">Todos os bairros</option>
-          {bairros.map((m) => <option key={m} value={m}>{titulo(m)}</option>)}
-        </select>
+        <Escolha rotuloCampo="Microrregião" vazio="Todas" valor={micro} opcoes={micros}
+          aoMudar={(v) => { setMicro(v); setCidade(''); setBairro(''); }} />
+        <Escolha rotuloCampo="Cidade" vazio="Todas" valor={cidade} opcoes={cidades}
+          aoMudar={(v) => { setCidade(v); setBairro(''); }} />
+        <Escolha rotuloCampo="Bairro" vazio="Todos" valor={bairro} opcoes={bairros} aoMudar={setBairro} />
         <select value={soFin} onChange={(e) => setSoFin(e.target.value as typeof soFin)}>
           <option value="todos">Financeiro: todos</option>
           <option value="com">Com alerta financeiro</option>
