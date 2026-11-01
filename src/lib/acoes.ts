@@ -236,3 +236,13 @@ export async function buscarLugares(texto: string): Promise<{ lat: number; lng: 
   const r = await buscarLugar(texto);
   return r ? [{ lat: r.lat, lng: r.lng, rotulo: texto, endereco: r.rotulo }] : [];
 }
+
+/** Tira da rota todos os clientes ainda não visitados (os já registrados ficam). */
+export async function desmarcarTodos(data: string) {
+  const r = await obterRota(data);
+  const antes = r.paradas.length;
+  r.paradas = r.paradas.filter((p) => p.resultado);
+  invalidar(r);
+  await salvarRota(r);
+  return antes - r.paradas.length;
+}

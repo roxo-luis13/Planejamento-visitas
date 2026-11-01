@@ -4,13 +4,14 @@ import { db } from '../db';
 import type { Cliente } from '../types';
 import { alertaFinanceiro, calcularPrioridade, NIVEIS, type NivelPrioridade } from '../lib/prioridade';
 import { hojeISO, nomeDia, normalizar, titulo } from '../lib/texto';
-import { alternarNaRota } from '../lib/acoes';
+import { alternarNaRota, desmarcarTodos } from '../lib/acoes';
+import Folha from '../components/Folha';
 import { SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
 import Escolha, { type Opcao } from '../components/Escolha';
 
 type Ordem = 'prioridade' | 'nome' | 'cidade';
 
-export default function Carteira({ data, abrirCliente }: { data: string; abrirCliente: (codigo: string) => void }) {
+export default function Carteira({ data, abrirCliente, irRota }: { data: string; abrirCliente: (codigo: string) => void; irRota: () => void }) {
   const todos = useLiveQuery(() => db.clientes.toArray(), []) ?? [];
   const rota = useLiveQuery(() => db.rotas.get(data), [data]);
   const naRota = useMemo(() => new Set(rota?.paradas.map((p) => p.codigo) ?? []), [rota]);
@@ -24,6 +25,8 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
   const [ordem, setOrdem] = useState<Ordem>('prioridade');
   const [foraCarteira, setForaCarteira] = useState(false);
   const [limite, setLimite] = useState(80);
+  const [soSelecionados, setSoSelecionados] = useState(false);
+  const [verSelecionados, setVerSelecionados] = useState(false);
 
   const hoje = hojeISO();
   const base = useMemo(() => todos.filter((c) => (foraCarteira ? !c.ativo : c.ativo)), [todos, foraCarteira]);
@@ -50,6 +53,7 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
   const lista = useMemo(() => {
     const q = normalizar(busca);
     const r = base.filter((c) => {
+      if (soSelecionados) return naRota.has(c.codigo); // mostra todos os marcados, ignorando os outros filtros
       if (micro && c.micro !== micro) return false;
       if (cidade && c.cidade !== cidade) return false;
       if (bairro && c.bairro !== bairro) return false;
@@ -69,7 +73,10 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
       : ordem === 'cidade' ? (a, b) => a.cidade.localeCompare(b.cidade) || a.bairro.localeCompare(b.bairro) || porNome(a, b)
       : porNome);
     return r;
-  }, [base, busca, micro, cidade, bairro, nivel, soFin, ordem, prio]);
+  }, [base, busca, micro, cidade, bairro, nivel, soFin, ordem, prio, soSelecionados, naRota]);
+
+  const porCodigo = useMemo(() => new Map(todos.map((c) => [c.codigo, c])), [todos]);
+  const selecionados = (rota?.paradas ?? []).map((p) => ({ p, c: porCodigo.get(p.codigo) })).filter((x): x is { p: typeof x.p; c: Cliente } => !!x.c);
 
   if (!todos.length) {
     return <div className="vazio"><p>Nenhum cliente ainda.</p><p>Vá em <b>Ajustes → Importar planilha</b> para carregar a carteira.</p></div>;
@@ -81,9 +88,12 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
       <input className="busca" type="search" placeholder="Buscar nome, código, rede, bairro…" value={busca} onChange={(e) => { setBusca(e.target.value); setLimite(80); }} />
 
       <div className="chips">
-        <button className={`chip ${nivel === 'todos' ? 'ativo' : ''}`} onClick={() => setNivel('todos')}>Todos</button>
+        {naRota.size > 0 && (
+          <button className={`chip chip-sel ${soSelecionados ? 'ativo' : ''}`} onClick={() => setSoSelecionados(!soSelecionados)}>✓ Só selecionados ({naRota.size})</button>
+        )}
+        <button className={`chip ${nivel === 'todos' && !soSelecionados ? 'ativo' : ''}`} onClick={() => { setNivel('todos'); setSoSelecionados(false); }}>Todos</button>
         {(Object.keys(NIVEIS) as NivelPrioridade[]).map((n) => (
-          <button key={n} className={`chip ${nivel === n ? 'ativo' : ''}`} onClick={() => setNivel(n)}>
+          <button key={n} className={`chip ${nivel === n && !soSelecionados ? 'ativo' : ''}`} onClick={() => { setNivel(n); setSoSelecionados(false); }}>
             {NIVEIS[n].emoji} {NIVEIS[n].rotulo} {contagem[n] ? `(${contagem[n]})` : ''}
           </button>
         ))}
@@ -126,6 +136,40 @@ export default function Carteira({ data, abrirCliente }: { data: string; abrirCl
         ))}
       </ul>
       {lista.length > limite && <button className="btn btn-sec btn-bloco" onClick={() => setLimite(limite + 100)}>Mostrar mais ({lista.length - limite})</button>}
+      {soSelecionados && !lista.length && <div className="vazio">Nenhum cliente selecionado.</div>}
+
+      {naRota.size > 0 && (
+        <div className="barra-selecionados">
+          <button className="barra-sel-info" onClick={() => setVerSelecionados(true)}>
+            <b>✓ {naRota.size} na rota</b><small>{nomeDia(data)} · tocar para ver/desmarcar</small>
+          </button>
+          <button className="btn btn-peq" onClick={irRota}>Ver rota ›</button>
+        </div>
+      )}
+
+      <Folha aberta={verSelecionados} aoFechar={() => setVerSelecionados(false)} titulo={`Na rota de ${nomeDia(data)} (${naRota.size})`}>
+        <ul className="lista-sel">
+          {selecionados.map(({ p, c }) => (
+            <li key={c.codigo}>
+              <div className="lista-sel-nome" onClick={() => { setVerSelecionados(false); abrirCliente(c.codigo); }}>
+                <b>{c.fantasia}</b><small>{titulo(c.bairro)} · {titulo(c.cidade)}{p.resultado ? ' · já visitado' : ''}</small>
+              </div>
+              <button className="btn-desmarcar" aria-label={`Desmarcar ${c.fantasia}`}
+                onClick={() => (!p.resultado || confirm(`${c.fantasia} já tem visita registrada. Tirar da rota mesmo assim?`)) && alternarNaRota(data, c.codigo)}>✕</button>
+            </li>
+          ))}
+        </ul>
+        {!selecionados.length && <p className="nota-peq">Nenhum cliente na rota.</p>}
+        <div className="botoes">
+          <button className="btn" onClick={() => { setVerSelecionados(false); irRota(); }}>Ver rota ›</button>
+          {selecionados.some((x) => !x.p.resultado) && (
+            <button className="btn btn-sec" onClick={async () => {
+              if (!confirm('Desmarcar todos os clientes ainda não visitados deste dia?')) return;
+              await desmarcarTodos(data); setSoSelecionados(false); setVerSelecionados(false);
+            }}>Desmarcar todos</button>
+          )}
+        </div>
+      </Folha>
     </div>
   );
 }
