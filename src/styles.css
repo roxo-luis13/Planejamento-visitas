@@ -138,3 +138,32 @@ details input { margin-top: 6px; }
 .dica-instalar { background: #fff8d6; border-bottom: 1px solid #f0e2a0; padding: 10px 16px; font-size: 14px; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 @keyframes subir { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
 @keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
+
+/* Saída (tela Rota) */
+.saida-linha { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 4px 0; text-align: left; color: var(--texto); cursor: pointer; }
+.saida-icone { font-size: 22px; }
+.saida-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.saida-texto small { color: var(--sub); font-size: 12px; }
+.saida-texto b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saida-alterar { color: var(--azul); font-size: 15px; }
+.saida-opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 8px; border-top: 1px solid var(--borda); padding-top: 8px; }
+.saida-opcoes label { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 0; }
+.saida-opcoes input[type=time] { width: auto; padding: 6px 10px; }
+.sub-titulo { font-size: 14px; color: var(--sub); text-transform: uppercase; letter-spacing: .03em; margin: 16px 0 6px; }
+.lista-locais { list-style: none; margin: 0; padding: 0; }
+.lista-locais li { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--borda); padding: 6px 0; }
+.local-escolher { flex: 1; min-width: 0; border: 0; background: none; text-align: left; padding: 6px 0; display: flex; flex-direction: column; color: var(--texto); cursor: pointer; }
+.local-escolher small, .achado small { color: var(--sub); font-size: 13px; display: block; }
+.btn-icone.estrela { background: #fff4c2; color: #b88600; }
+.busca-linha { display: flex; gap: 8px; }
+.busca-linha input { flex: 1; }
+.achado { border: 1px solid var(--borda); border-radius: 10px; padding: 10px; margin: 8px 0; }
+.achado .botoes { margin-top: 6px; }
+.cartao.destaque { border: 2px solid var(--azul); }
+.eta { font-size: 14px; margin-top: 4px; }
+.transito { color: #d93025; }
+.alerta.erro { background: #fdecea; border-color: #f5b5ae; color: #8a1c12; }
+.centro { text-align: center; margin: 8px 0; }
+.passos { padding-left: 20px; }
+.passos li { margin: 6px 0; }
+code { background: #eef1f5; padding: 1px 4px; border-radius: 4px; font-size: 12px; word-break: break-all; }

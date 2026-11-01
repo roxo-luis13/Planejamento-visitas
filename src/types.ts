@@ -80,10 +80,24 @@ export interface Parada {
 }
 
 export interface Partida {
-  tipo: 'padrao' | 'atual';
+  tipo: 'padrao' | 'atual' | 'local' | 'busca';
   lat: number;
   lng: number;
   rotulo: string;
+}
+
+/** Resultado do cálculo real pelo Google (ruas + trânsito). */
+export interface CalculoRota {
+  em: string;                 // quando foi calculado
+  saidaEm: string;            // horário de saída usado (ISO)
+  codigos: string[];          // paradas cobertas, na ordem
+  voltar: boolean;
+  pernas: { distM: number; durS: number; semTransitoS: number }[];
+  distM: number;
+  durS: number;
+  semTransitoS: number;
+  polyline: string;
+  origem: { lat: number; lng: number };
 }
 
 export interface Rota {
@@ -92,7 +106,11 @@ export interface Rota {
   partida: Partida | null;
   retornar: boolean;
   otimizadaEm: string | null;
+  horaSaida?: string;         // "08:00"
+  calculo?: CalculoRota | null;
 }
+
+export interface LocalSalvo { id: string; nome: string; lat: number; lng: number; endereco: string }
 
 export interface Visita {
   id?: number;
@@ -118,6 +136,8 @@ export interface ResumoImportacao {
 
 export interface Config {
   partidaPadrao: { lat: number; lng: number; rotulo: string } | null;
+  locais: LocalSalvo[];
+  horaSaidaPadrao: string;
   minutosPorVisita: number;
   velocidadeMedia: number;   // km/h
   googleKey: string;
@@ -126,6 +146,8 @@ export interface Config {
 
 export const CONFIG_PADRAO: Config = {
   partidaPadrao: null,
+  locais: [],
+  horaSaidaPadrao: '08:00',
   minutosPorVisita: 30,
   velocidadeMedia: 30,
   googleKey: '',

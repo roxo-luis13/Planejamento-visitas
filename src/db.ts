@@ -34,6 +34,14 @@ export async function salvarConfig(parcial: Partial<Config>) {
   await db.config.bulkPut(Object.entries(parcial).map(([chave, valor]) => ({ chave, valor })));
 }
 
+/** Rota do dia; um dia novo já começa com a saída e o horário padrão. */
 export async function obterRota(data: string): Promise<Rota> {
-  return (await db.rotas.get(data)) ?? { data, paradas: [], partida: null, retornar: true, otimizadaEm: null };
+  const r = await db.rotas.get(data);
+  if (r) return r;
+  const cfg = await lerConfig();
+  return {
+    data, paradas: [], retornar: true, otimizadaEm: null, calculo: null,
+    partida: cfg.partidaPadrao ? { tipo: 'padrao', ...cfg.partidaPadrao } : null,
+    horaSaida: cfg.horaSaidaPadrao
+  };
 }

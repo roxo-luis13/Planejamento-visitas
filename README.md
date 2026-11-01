@@ -7,10 +7,10 @@ Roda no Safari do iPhone e é instalado em *Compartilhar → Adicionar à Tela d
 
 | Tela | Funções |
 |---|---|
-| **Rota** | Dia selecionável · saída pelo ponto padrão ou pela localização atual · voltar ou não ao ponto de saída · **otimizar ordem** · km e tempo estimados · mapa numerado · navegar (Apple Mapas / Google Maps / Waze) · rota completa no Google Maps · registrar resultado da visita |
+| **Rota** | Dia selecionável · **saída escolhida aqui** (localização atual, locais salvos como Casa/Escritório, ou busca de endereço; ★ = padrão dos próximos dias) · horário de saída · voltar ou não à saída · **otimizar com trânsito (Google)** · km reais, tempo com trânsito e horário de chegada em cada cliente · traçado pelas ruas no mapa · navegar (Apple Mapas / Google Maps / Waze) · registrar resultado da visita |
 | **Carteira** | Busca · filtros por prioridade, microrregião, cidade, bairro e financeiro · ordenação · botão ＋ para pôr na rota do dia |
 | **Cliente** | Endereço com nível de precisão e alertas · "Estou na loja" (grava o GPS) · ajustar no mapa · corrigir endereço · compras por marca e ano · frequência · financeiro · grupo/rede · anotações · histórico de visitas |
-| **Ajustes** | Importar planilha · progresso das sugestões de endereço · ponto de partida · parâmetros da estimativa · backup/restauração · chave Google opcional |
+| **Ajustes** | Chave do Google (com passo a passo e teste) · importar planilha · progresso das sugestões de endereço · tempo por visita · backup/restauração |
 
 ### Prioridade de visita
 `ciclo = 365 ÷ FREQ.MEDIA` · `atraso = dias desde o último faturamento − ciclo`
@@ -18,6 +18,13 @@ Roda no Safari do iPhone e é instalado em *Compartilhar → Adicionar à Tela d
 
 ### Financeiro
 "Há N dias" ou "X" = pendência **do próprio cliente** (selo vermelho). "Grupo Econômico com..." = pendência **de outra loja do grupo** (selo laranja).
+
+### Rota real com trânsito (Google Routes API)
+Com a chave do Google cadastrada em Ajustes, "Otimizar com trânsito" pede ao Google a **melhor ordem pelas ruas, considerando o
+trânsito** do horário de saída (agora, ou o previsto se a saída for no futuro). O app mostra km, tempo dirigindo, minutos perdidos no
+trânsito, horário de chegada em cada cliente e fim previsto. "Atualizar trânsito" recalcula os tempos mantendo a ordem.
+Com visitas já registradas, o cálculo parte da última visita, no horário atual. Sem chave, o app usa uma estimativa em linha reta.
+A chave fica guardada só no aparelho (nunca no repositório); restrinja-a ao site do app e às APIs Routes e Places (New).
 
 ### Endereços (a planilha não traz rua nem número)
 O app sugere um local automaticamente, nesta ordem: loja pelo nome (Google, se houver chave; senão OpenStreetMap) → rua pelo CEP (ViaCEP, só para CEP que não seja o geral da cidade) → centro do bairro → centro da cidade.

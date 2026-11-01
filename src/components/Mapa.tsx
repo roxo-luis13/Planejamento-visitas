@@ -14,7 +14,8 @@ export interface Marcador {
 
 interface Props {
   marcadores: Marcador[];
-  linha?: { lat: number; lng: number }[];
+  linha?: { lat: number; lng: number }[];        // tracejada (estimativa em linha reta)
+  tracado?: { lat: number; lng: number }[];      // traçado real pelas ruas (Google)
   arrastavel?: { lat: number; lng: number; aoMover: (lat: number, lng: number) => void } | null;
   aoTocar?: (id: string) => void;
   altura?: number;
@@ -22,7 +23,7 @@ interface Props {
 
 const CENTRO_SP: L.LatLngExpression = [-23.55, -46.63];
 
-export default function Mapa({ marcadores, linha, arrastavel, aoTocar, altura = 260 }: Props) {
+export default function Mapa({ marcadores, linha, tracado, arrastavel, aoTocar, altura = 260 }: Props) {
   const div = useRef<HTMLDivElement>(null);
   const mapa = useRef<L.Map | null>(null);
   const camada = useRef<L.LayerGroup | null>(null);
@@ -45,6 +46,10 @@ export default function Mapa({ marcadores, linha, arrastavel, aoTocar, altura = 
     if (linha && linha.length > 1) {
       L.polyline(linha.map((p): L.LatLngTuple => [p.lat, p.lng]), { color: '#0b5cad', weight: 3, opacity: 0.6, dashArray: '6 6' }).addTo(g);
     }
+    if (tracado && tracado.length > 1) {
+      L.polyline(tracado.map((p): L.LatLngTuple => [p.lat, p.lng]), { color: '#0b5cad', weight: 5, opacity: 0.8 }).addTo(g);
+      tracado.forEach((p) => limites.push([p.lat, p.lng]));
+    }
     for (const mk of marcadores) {
       const icone = L.divIcon({
         className: '',
@@ -64,10 +69,11 @@ export default function Mapa({ marcadores, linha, arrastavel, aoTocar, altura = 
       mark.on('dragend', () => { const p = mark.getLatLng(); arrastavel.aoMover(p.lat, p.lng); });
       limites.push([arrastavel.lat, arrastavel.lng]);
     }
-    if (limites.length === 1) m.setView(limites[0], arrastavel ? 17 : 15);
-    else if (limites.length > 1) m.fitBounds(L.latLngBounds(limites), { padding: [30, 30], maxZoom: 16 });
-    setTimeout(() => m.invalidateSize(), 50);
-  }, [marcadores, linha, arrastavel, aoTocar]);
+    if (limites.length === 1) m.setView(limites[0], arrastavel ? 17 : 15, { animate: false });
+    else if (limites.length > 1) m.fitBounds(L.latLngBounds(limites), { padding: [30, 30], maxZoom: 16, animate: false });
+    // só ajusta se o mapa ainda estiver na tela (evita erro ao trocar de aba)
+    setTimeout(() => { if (mapa.current === m) m.invalidateSize({ animate: false }); }, 50);
+  }, [marcadores, linha, tracado, arrastavel, aoTocar]);
 
   return <div ref={div} className="mapa" style={{ height: altura }} />;
 }
