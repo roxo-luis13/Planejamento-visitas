@@ -10,9 +10,10 @@ import { alternarNaRota, marcarChegada, moverParada, otimizarRota } from '../lib
 import { estimar } from '../lib/rota';
 import { decodificarPolyline, horarios } from '../lib/google';
 import { linksRotaGoogle } from '../lib/navegar';
-import { hojeISO, nomeDia, somarDias, titulo } from '../lib/texto';
+import { hojeISO, nomeDia, titulo } from '../lib/texto';
 import Mapa, { type Marcador } from '../components/Mapa';
 import Saida from '../components/Saida';
+import SeletorDia from '../components/SeletorDia';
 import BotaoNavegar from '../components/Navegar';
 import { PRECISOES, SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
 
@@ -101,14 +102,14 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
   if (!rota || !cfg) return null;
   return (
     <div>
-      <div className="nav-dia">
-        <button className="btn-icone" onClick={() => setData(somarDias(data, -1))}>‹</button>
-        <div className="nav-dia-meio">
-          <div className="nav-dia-titulo">{data === hojeISO() ? 'Hoje' : nomeDia(data).split(',')[0].replace(/^./, (l) => l.toUpperCase())}</div>
-          <input type="date" value={data} onChange={(e) => e.target.value && setData(e.target.value)} />
-        </div>
-        <button className="btn-icone" onClick={() => setData(somarDias(data, 1))}>›</button>
-      </div>
+      <SeletorDia data={data} setData={setData} legenda="Rota de">
+        {paradas.length ? (
+          <>
+            <span>{paradas.length} cliente(s) na rota</span>
+            <span className={`plano-dia-qtd ${paradas.every((p) => p.resultado) ? 'tem' : ''}`}>{paradas.filter((p) => p.resultado).length} de {paradas.length} feitas</span>
+          </>
+        ) : <span>Nenhum cliente na rota deste dia</span>}
+      </SeletorDia>
 
       <div className="cartao">
         <Saida rota={rota} cfg={cfg} />

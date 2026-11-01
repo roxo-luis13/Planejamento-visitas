@@ -155,10 +155,6 @@ input[type=checkbox] { width: auto; }
 .parada.feita .num { background: var(--cinza); }
 .resultado { margin-top: 6px; font-size: 14px; }
 
-.nav-dia { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; }
-.nav-dia-meio { flex: 1; text-align: center; }
-.nav-dia-titulo { font-weight: 700; font-size: 18px; }
-.nav-dia-meio input { text-align: center; padding: 4px; border: 0; background: transparent; color: var(--sub); }
 
 .linha-form { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
 .linha-form label { font-size: 13px; color: var(--sub); }
