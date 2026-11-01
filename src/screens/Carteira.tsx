@@ -4,7 +4,7 @@ import { db } from '../db';
 import type { Cliente } from '../types';
 import { calcularPrioridade, NIVEIS, type NivelPrioridade } from '../lib/prioridade';
 import { chaveBairro, FILTROS_VAZIOS, marcasDoCliente, filtrosAtivos, passaFiltros, passaLugar, podarLugar, type FiltroFin, type Filtros } from '../lib/filtros';
-import { hojeISO, nomeDia, titulo } from '../lib/texto';
+import { hojeISO, nomeDia, somarDias, titulo } from '../lib/texto';
 import { alternarNaRota, desmarcarTodos } from '../lib/acoes';
 import Folha from '../components/Folha';
 import { SeloFinanceiro, SeloLocal, SeloPrioridade } from '../components/Selos';
@@ -12,7 +12,9 @@ import Escolha, { type Opcao } from '../components/Escolha';
 
 type Ordem = 'prioridade' | 'nome' | 'cidade';
 
-export default function Carteira({ data, abrirCliente, irRota }: { data: string; abrirCliente: (codigo: string) => void; irRota: () => void }) {
+export default function Carteira({ data, setData, abrirCliente, irRota }: {
+  data: string; setData: (d: string) => void; abrirCliente: (codigo: string) => void; irRota: () => void;
+}) {
   const todos = useLiveQuery(() => db.clientes.toArray(), []) ?? [];
   const rota = useLiveQuery(() => db.rotas.get(data), [data]);
   const naRota = useMemo(() => new Set(rota?.paradas.map((p) => p.codigo) ?? []), [rota]);
@@ -85,7 +87,21 @@ export default function Carteira({ data, abrirCliente, irRota }: { data: string;
 
   return (
     <div>
-      <div className="faixa-plano">Toque em <b>＋</b> para adicionar à rota de <b>{nomeDia(data)}</b> · {naRota.size} na rota</div>
+      <div className="plano-dia">
+        <div className="plano-dia-nav">
+          <button className="btn-icone" aria-label="Dia anterior" onClick={() => setData(somarDias(data, -1))}>‹</button>
+          <label className="plano-dia-meio">
+            <small>Montando a rota de</small>
+            <b>{data === hoje ? 'Hoje' : data === somarDias(hoje, 1) ? 'Amanhã' : nomeDia(data).split(',')[0].replace(/^./, (l) => l.toUpperCase())}, {data.slice(8, 10)}/{data.slice(5, 7)} ▾</b>
+            <input type="date" value={data} aria-label="Escolher o dia da rota" onChange={(e) => e.target.value && setData(e.target.value)} />
+          </label>
+          <button className="btn-icone" aria-label="Próximo dia" onClick={() => setData(somarDias(data, 1))}>›</button>
+        </div>
+        <div className="plano-dia-rodape">
+          <span>Toque em <b>＋</b> para adicionar</span>
+          <span className={`plano-dia-qtd ${naRota.size ? 'tem' : ''}`}>{naRota.size} na rota</span>
+        </div>
+      </div>
       <input className="busca" type="search" placeholder="Buscar nome, código, rede, bairro…" value={f.busca} onChange={(e) => mudar({ busca: e.target.value })} />
 
       <div className="chips">

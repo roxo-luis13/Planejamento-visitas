@@ -157,7 +157,7 @@ input[type=checkbox] { width: auto; }
 
 .nav-dia { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; }
 .nav-dia-meio { flex: 1; text-align: center; }
-.nav-dia-titulo { font-weight: 700; font-size: 18px; text-transform: capitalize; }
+.nav-dia-titulo { font-weight: 700; font-size: 18px; }
 .nav-dia-meio input { text-align: center; padding: 4px; border: 0; background: transparent; color: var(--sub); }
 
 .linha-form { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
@@ -366,3 +366,16 @@ details.avancado h2 { margin-top: 18px; }
 .cartao-gps { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
 .cartao-gps small { display: block; color: var(--sub); font-size: 12px; }
 .erro-txt { color: var(--vermelho) !important; margin-top: 4px; }
+
+/* Carteira: dia da rota que está sendo montada */
+.plano-dia { background: var(--azul-claro); border: 2px solid var(--azul); border-radius: 14px; padding: 10px 10px 12px; margin-bottom: 10px; }
+.plano-dia-nav { display: flex; align-items: center; gap: 8px; }
+.plano-dia-meio { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.plano-dia-meio small { font-size: 12px; color: var(--sub); }
+.plano-dia-meio b { font-size: 21px; color: var(--azul); }
+/* o campo de data cobre o título: tocar no dia abre o calendário do iPhone */
+.plano-dia-meio input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; }
+.plano-dia .btn-icone { background: var(--cartao); }
+.plano-dia-rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 15px; color: var(--texto); gap: 8px; }
+.plano-dia-qtd { font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--cartao); color: var(--sub); white-space: nowrap; }
+.plano-dia-qtd.tem { background: var(--azul-botao); color: var(--sobre-azul); }

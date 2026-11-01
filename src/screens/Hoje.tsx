@@ -104,7 +104,7 @@ export default function Hoje({ data, setData, abrirCliente, irCarteira, irAjuste
       <div className="nav-dia">
         <button className="btn-icone" onClick={() => setData(somarDias(data, -1))}>‹</button>
         <div className="nav-dia-meio">
-          <div className="nav-dia-titulo">{data === hojeISO() ? 'Hoje' : nomeDia(data).split(',')[0]}</div>
+          <div className="nav-dia-titulo">{data === hojeISO() ? 'Hoje' : nomeDia(data).split(',')[0].replace(/^./, (l) => l.toUpperCase())}</div>
           <input type="date" value={data} onChange={(e) => e.target.value && setData(e.target.value)} />
         </div>
         <button className="btn-icone" onClick={() => setData(somarDias(data, 1))}>›</button>
